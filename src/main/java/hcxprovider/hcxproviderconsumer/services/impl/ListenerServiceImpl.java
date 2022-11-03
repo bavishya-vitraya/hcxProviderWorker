@@ -5,6 +5,7 @@ import hcxprovider.hcxproviderconsumer.utils.Constants;
 import io.hcxprotocol.impl.HCXOutgoingRequest;
 import io.hcxprotocol.init.HCXIntegrator;
 import io.hcxprotocol.utils.Operations;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class ListenerServiceImpl implements ListenerService {
     @Value("classpath:resources/keys/vitraya-mock-provider-private-key.pem")
@@ -61,7 +63,7 @@ public class ListenerServiceImpl implements ListenerService {
     @Override
     public boolean hcxGenerate(String reqType) throws Exception {
 
-        File payloadFile = new ClassPathResource("input/message.txt").getFile();
+        File payloadFile = new ClassPathResource("input/claim.txt").getFile();
         String payload = FileUtils.readFileToString(payloadFile);
 
         HCXIntegrator.init(setConfig());
@@ -75,7 +77,9 @@ public class ListenerServiceImpl implements ListenerService {
         }
         Map<String,Object> output = new HashMap<>();
         HCXOutgoingRequest hcxOutgoingRequest = new HCXOutgoingRequest();
-        return hcxOutgoingRequest.generate(payload,operation,recipientCode,output);
-
+        Boolean response = hcxOutgoingRequest.generate(payload,operation,recipientCode,output);
+        log.info(String.valueOf(response));
+        log.info("{}",output);
+        return response;
     }
 }
