@@ -22,25 +22,25 @@ public class ListenerServiceImpl implements ListenerService {
     @Value("classpath:resources/keys/vitraya-mock-provider-private-key.pem")
     String privateKeyPath;
 
-    @Value("${protocolBasePath}")
+    @Value("${hcx.protocolBasePath}")
     String protocolBasePath;
 
-    @Value("${authBasePath}")
+    @Value("${hcx.authBasePath}")
     String authBasePath;
 
-    @Value("${participantCode}")
+    @Value("${hcx.participantCode}")
     String participantCode;
 
-    @Value("${recipientCode}")
+    @Value("${hcx.recipientCode}")
     String recipientCode;
 
-    @Value("${username}")
+    @Value("${hcx.username}")
     String username;
 
-    @Value("${password}")
+    @Value("${hcx.password}")
     String password;
 
-    @Value("${igUrl}")
+    @Value("${hcx.igUrl}")
     String igUrl;
 
     @Value("classpath:resources/input/message.txt")
@@ -81,5 +81,10 @@ public class ListenerServiceImpl implements ListenerService {
         log.info(String.valueOf(response));
         log.info("{}",output);
         return response;
+    }
+
+    @Override
+    public boolean hcxGetResponse(String resType) {
+        return false;
     }
 }

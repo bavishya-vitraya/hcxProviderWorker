@@ -1,4 +1,4 @@
-package com.hcx.hcxprovider.configuration;
+package hcxprovider.hcxproviderconsumer.configuration;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;

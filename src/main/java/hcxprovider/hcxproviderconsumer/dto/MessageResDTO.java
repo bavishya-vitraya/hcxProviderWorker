@@ -5,11 +5,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-public class Message {
-    private String requestId;
+@NoArgsConstructor
+public class MessageResDTO {
+    private String responseId;
     private String senderCode;
     private String insurerCode;
-    private String requestType;
+    private String responseType;
 }
