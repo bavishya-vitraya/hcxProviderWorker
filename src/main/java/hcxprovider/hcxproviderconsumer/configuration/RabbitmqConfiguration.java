@@ -13,43 +13,54 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitmqConfiguration {
     @Value("${queue.req.name}")
-    String reqQueue;
+    private String reqQueue;
 
     @Value("${queue.res.name}")
-    String resQueue;
+    private String resQueue;
 
-    @Value("${queue.exchange}")
-    String exchange;
+    @Value("${queue.exchange.name}")
+    private String exchange;
 
-    @Value("${queue.req.routingKey}")
-    private String reqRoutingkey;
+    @Value("${queue.reqrouting.key}")
+    private String reqroutingKey;
 
-    @Value("${queue.res.routingKey}")
-    private String resRoutingkey;
+    @Value("${queue.resrouting.key}")
+    private String resroutingKey;
 
-
+    // spring bean for rabbitmq queue
     @Bean
-    public Queue ReqQueue() {
+    public Queue reqQueue() {
         return new Queue(reqQueue);
     }
 
+    // spring bean for queue (store json messages)
     @Bean
-    public Queue ResQueue() {
+    public Queue resQueue() {
         return new Queue(resQueue);
     }
 
+    // spring bean for rabbitmq exchange
     @Bean
     public TopicExchange exchange() {
         return new TopicExchange(exchange);
     }
 
+    // binding between queue and exchange using routing key
     @Bean
-    public Binding Reqbind() {
-        return BindingBuilder.bind(ReqQueue()).to(exchange()).with(reqRoutingkey);
+    public Binding reqBinding() {
+        return BindingBuilder
+                .bind(reqQueue())
+                .to(exchange())
+                .with(reqroutingKey);
     }
 
-    public Binding Resbind() {
-        return BindingBuilder.bind(ResQueue()).to(exchange()).with(resRoutingkey);
+    // binding between json queue and exchange using routing key
+    @Bean
+    public Binding resBinding() {
+        return BindingBuilder
+                .bind(resQueue())
+                .to(exchange())
+                .with(resroutingKey);
     }
 
     @Bean
@@ -58,9 +69,10 @@ public class RabbitmqConfiguration {
     }
 
     @Bean
-    public AmqpTemplate template(ConnectionFactory connectionFactory) {
-        final RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+    public AmqpTemplate amqpTemplate(ConnectionFactory connectionFactory) {
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(converter());
         return rabbitTemplate;
     }
+
 }

@@ -5,6 +5,6 @@ public class Constants {
     public static final String CLAIM = "claimRequest";
     public static final String PRE_AUTH = "preAuthRequest";
 
-    public static final String RES_QUEUE = "hcxResponse_queue";
-    public static final String REQ_QUEUE = "hcxRequests_queue";
+    public static final String RES_QUEUE = "hcx_response";
+    public static final String REQ_QUEUE = "hcx_request";
 }

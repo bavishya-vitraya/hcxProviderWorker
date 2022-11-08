@@ -72,7 +72,7 @@ public class VHIRequestListener {
 //            Gson json = new Gson();
 //            MessageResDTO msg = new MessageResDTO();
 //            msg = (MessageResDTO) json.fromJson(message,MessageResDTO.class);
-//            log.info("retrieved message :{}",msg);
+             log.info("retrieved message :{}", msg);
             String resType = msg.getResponseType();
             log.info("Response Type from Message Class object"+resType);
             CoverageEligibilityResponse coverageEligibilityResponse = new CoverageEligibilityResponse();
