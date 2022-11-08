@@ -43,8 +43,6 @@ public class ListenerServiceImpl implements ListenerService {
     @Value("${hcx.igUrl}")
     String igUrl;
 
-    @Value("classpath:resources/input/message.txt")
-    String payloadPath;
 
     public Map<String, Object> setConfig() throws IOException {
         Map<String, Object> config = new HashMap<>();
@@ -63,7 +61,7 @@ public class ListenerServiceImpl implements ListenerService {
     @Override
     public boolean hcxGenerate(String reqType) throws Exception {
 
-        File payloadFile = new ClassPathResource("input/claim.txt").getFile();
+        File payloadFile = new ClassPathResource("input/preAuthTest.txt").getFile();
         String payload = FileUtils.readFileToString(payloadFile);
 
         HCXIntegrator.init(setConfig());

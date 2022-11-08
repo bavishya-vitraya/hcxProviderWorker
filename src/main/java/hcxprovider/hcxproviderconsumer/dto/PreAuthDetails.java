@@ -2,13 +2,20 @@ package hcxprovider.hcxproviderconsumer.dto;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class PreAuthDetails {
-    private String claimId;
-    private String hospitalName;
-    private String patientName;
-    private String patientContact;
-    private String patientEmail;
-    private String procedure;
-    private String quotedAmount;
+    private List<FileDTO> files;
+    private String policySource;
+    private Integer requestedAmount;
+    private String hospitalCode;
+    private String admissionType;
+    private String policyNumber;
+    private String healthId;
+    private String vitrayaReferenceNumber;
+    private String attendantMobileNumber;
+    private AdditionalDataDTO additionalData;
+    private List<String> reasonForAdmission;
+    private String email;
 }
