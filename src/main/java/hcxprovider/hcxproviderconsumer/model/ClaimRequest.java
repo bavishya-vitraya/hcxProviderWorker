@@ -15,4 +15,5 @@ public class ClaimRequest {
     private String senderCode;
     private String hospitalName;
     private String requestType;
+    private FinalEnhanceDTO claimRequest;
 }
