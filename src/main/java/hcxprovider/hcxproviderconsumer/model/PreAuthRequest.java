@@ -14,7 +14,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class PreAuthRequest {
 @Id
     private String id;
-    private String hospitalCode;
+    private String senderCode;
     private String insurerCode;
     private String requestType;
     private PreAuthDetails preAuthReq;

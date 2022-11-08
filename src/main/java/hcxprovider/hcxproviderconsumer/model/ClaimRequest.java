@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class ClaimRequest {
     private String id;
     private String insurerCode;
-    private String hospitalCode;
+    private String senderCode;
     private String hospitalName;
     private String requestType;
 }

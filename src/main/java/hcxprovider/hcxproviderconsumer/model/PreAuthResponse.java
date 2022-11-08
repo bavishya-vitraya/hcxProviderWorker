@@ -15,7 +15,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class PreAuthResponse {
     @Id
     private String id;
-    private String hospitalCode;
+    private String senderCode;
     private String insurerCode;
     private String responseType;
     private String preAuthRes;

@@ -17,5 +17,5 @@ public class CoverageEligibilityRequest {
   private String requestType;
   private String hospitalName;
   private String insurerCode;
-  private String hospitalCode;
+  private String senderCode;
 }

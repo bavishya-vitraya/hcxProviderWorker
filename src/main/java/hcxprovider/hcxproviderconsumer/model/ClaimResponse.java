@@ -14,7 +14,7 @@ public class ClaimResponse {
     @Id
     private String id;
     private String insurerCode;
-    private String hospitalCode;
+    private String senderCode;
     private String hospitalName;
     private String responseType;
 }

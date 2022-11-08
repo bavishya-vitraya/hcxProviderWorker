@@ -16,5 +16,5 @@ public class CoverageEligibilityResponse {
     private String responseType;
     private String hospitalName;
     private String insurerCode;
-    private String hospitalCode;
+    private String senderCode;
 }

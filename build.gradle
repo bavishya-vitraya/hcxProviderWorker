@@ -24,7 +24,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'com.google.code.gson:gson'
-	implementation files('F:\\Vitraya\\HCX\\hcx-integrator-sdk-1.0.0.jar')
+	implementation files('C:\\Users\\flora\\OneDrive\\Documents\\hcx-sdk\\hcx-integrator-sdk-1.0.0.jar')
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

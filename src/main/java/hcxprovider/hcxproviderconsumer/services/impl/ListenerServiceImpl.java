@@ -83,8 +83,4 @@ public class ListenerServiceImpl implements ListenerService {
         return response;
     }
 
-    @Override
-    public boolean hcxGetResponse(String resType) {
-        return false;
-    }
 }

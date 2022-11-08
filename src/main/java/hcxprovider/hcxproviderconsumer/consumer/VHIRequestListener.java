@@ -23,28 +23,24 @@ import java.util.Optional;
 public class VHIRequestListener {
 
     @Autowired
-    private PreAuthRequestRepo preAuthRequestRepo;
+    PreAuthRequestRepo preAuthRequestRepo;
     @Autowired
-    private CoverageEligibilityRequestRepo coverageEligibilityRequestRepo;
+     CoverageEligibilityRequestRepo coverageEligibilityRequestRepo;
     @Autowired
-    private ClaimRequestRepo claimRequestRepo;
+   ClaimRequestRepo claimRequestRepo;
 
     @Autowired
-    private PreAuthResponseRepo preAuthResponseRepo;
+     PreAuthResponseRepo preAuthResponseRepo;
     @Autowired
-    private CoverageEligibilityResponseRepo coverageEligibilityResponseRepo;
+    CoverageEligibilityResponseRepo coverageEligibilityResponseRepo;
     @Autowired
-    private ClaimResponseRepo claimResponseRepo;
+     ClaimResponseRepo claimResponseRepo;
     @Autowired
-    private ListenerService listenerService;
+     ListenerService listenerService;
 
     @RabbitListener(queues = Constants.REQ_QUEUE)
-    public void recievedRequest(String message) throws Exception {
+    public void recievedRequest(Message msg) throws Exception {
         try {
-            log.info(message);
-            Gson json = new Gson();
-            Message msg = new Message();
-            msg = (Message) json.fromJson(message,Message.class);
             log.info("retrieved message :{}",msg);
             String reqType = msg.getRequestType();
             log.info("Request Type from Message Class object"+reqType);
@@ -70,13 +66,13 @@ public class VHIRequestListener {
     }
 
     @RabbitListener(queues = Constants.RES_QUEUE)
-    public void recievedResponse(String message) throws Exception {
+    public void recievedResponse(MessageResDTO msg) throws Exception {
         try {
-            log.info(message);
-            Gson json = new Gson();
-            MessageResDTO msg = new MessageResDTO();
-            msg = (MessageResDTO) json.fromJson(message,MessageResDTO.class);
-            log.info("retrieved message :{}",msg);
+//            log.info(message);
+//            Gson json = new Gson();
+//            MessageResDTO msg = new MessageResDTO();
+//            msg = (MessageResDTO) json.fromJson(message,MessageResDTO.class);
+//            log.info("retrieved message :{}",msg);
             String resType = msg.getResponseType();
             log.info("Response Type from Message Class object"+resType);
             CoverageEligibilityResponse coverageEligibilityResponse = new CoverageEligibilityResponse();

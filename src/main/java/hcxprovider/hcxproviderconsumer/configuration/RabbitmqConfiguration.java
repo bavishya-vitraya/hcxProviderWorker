@@ -12,19 +12,30 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitmqConfiguration {
-    @Value("${queue.name}")
-    String queueName;
+    @Value("${queue.req.name}")
+    String reqQueue;
+
+    @Value("${queue.res.name}")
+    String resQueue;
 
     @Value("${queue.exchange}")
     String exchange;
 
-    @Value("${queue.routingKey}")
-    private String routingkey;
-    private ConnectionFactory connectionFactory;
+    @Value("${queue.req.routingKey}")
+    private String reqRoutingkey;
+
+    @Value("${queue.res.routingKey}")
+    private String resRoutingkey;
+
 
     @Bean
-    public Queue queue() {
-        return new Queue(queueName);
+    public Queue ReqQueue() {
+        return new Queue(reqQueue);
+    }
+
+    @Bean
+    public Queue ResQueue() {
+        return new Queue(resQueue);
     }
 
     @Bean
@@ -33,8 +44,12 @@ public class RabbitmqConfiguration {
     }
 
     @Bean
-    public Binding bind(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(routingkey);
+    public Binding Reqbind() {
+        return BindingBuilder.bind(ReqQueue()).to(exchange()).with(reqRoutingkey);
+    }
+
+    public Binding Resbind() {
+        return BindingBuilder.bind(ResQueue()).to(exchange()).with(resRoutingkey);
     }
 
     @Bean
