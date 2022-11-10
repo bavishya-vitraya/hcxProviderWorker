@@ -42,22 +42,7 @@ public class VHIRequestListener {
     public void recievedRequest(Message msg) throws Exception {
         try {
             log.info("retrieved message :{}",msg);
-            String reqType = msg.getRequestType();
-            log.info("Request Type from Message Class object"+reqType);
-            CoverageEligibilityRequest coverageEligibilityRequest = new CoverageEligibilityRequest();
-            ClaimRequest claimRequest = new ClaimRequest();
-            PreAuthRequest preAuthRequest = new PreAuthRequest();
-            if (reqType.equalsIgnoreCase(Constants.COVERAGE_ELIGIBILITY)) {
-                coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getRequestId());
-            } else if (reqType.equalsIgnoreCase(Constants.CLAIM)) {
-                claimRequest = claimRequestRepo.findClaimRequestById(msg.getRequestId());
-            } else if (reqType.equalsIgnoreCase(Constants.PRE_AUTH)) {
-                preAuthRequest = preAuthRequestRepo.findPreAuthRequestById(msg.getRequestId());
-            }
-            log.info("CoverageEligibility:{}", coverageEligibilityRequest);
-            log.info("ClaimReq:{}", claimRequest);
-            log.info("PreAuthReq:{}", preAuthRequest);
-            boolean result = listenerService.hcxGenerate(reqType);
+            boolean result = listenerService.hcxGenerate(msg);
             log.info(String.valueOf(result));
         }
         catch(Exception exception){
@@ -88,8 +73,8 @@ public class VHIRequestListener {
             log.info("CoverageEligibilityResponse:{}", coverageEligibilityResponse);
             log.info("ClaimResponse:{}", claimResponse);
             log.info("PreAuthResponse:{}", preAuthResponse);
-            boolean result = listenerService.hcxGenerate(resType);
-            log.info(String.valueOf(result));
+            //boolean result = listenerService.hcxGenerate(resType);
+           // log.info(String.valueOf(result));
         }
         catch(Exception exception){
             log.error("Exception :"+exception);

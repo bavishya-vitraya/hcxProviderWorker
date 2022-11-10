@@ -1,5 +1,6 @@
 package hcxprovider.hcxproviderconsumer.model;
 
+import hcxprovider.hcxproviderconsumer.dto.FinalEnhanceDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
