@@ -19,7 +19,7 @@ public class FinalEnhanceDTO {
     private List<String> procedure;
     private List<FileDTO> files; //
     private String amountBreakup;
-    private AdjudicationDetailsRequest adjudicationResult;
+    //private AdjudicationDetailsRequest adjudicationResult;
     private String vitrayaReferenceNumber;
     private String queryResponse;
 }

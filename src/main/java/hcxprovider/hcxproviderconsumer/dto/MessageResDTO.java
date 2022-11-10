@@ -12,4 +12,5 @@ public class MessageResDTO {
     private String senderCode;
     private String insurerCode;
     private String responseType;
+    private String response;
 }

@@ -4,11 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SpecialityDetailsDTO {
-    private String specialtyName;
-    private String remarks;
-    private String procedureName;
+public class ChronicIllnessDetailsJSON {
+    private List<String> chronicIllnessList;
 }
