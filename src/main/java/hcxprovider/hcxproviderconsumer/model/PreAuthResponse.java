@@ -1,6 +1,6 @@
 package hcxprovider.hcxproviderconsumer.model;
 
-import hcxprovider.hcxproviderconsumer.dto.PreAuthDetails;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
