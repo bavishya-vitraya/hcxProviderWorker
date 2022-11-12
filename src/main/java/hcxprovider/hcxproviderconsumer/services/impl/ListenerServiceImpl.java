@@ -3,6 +3,7 @@ package hcxprovider.hcxproviderconsumer.services.impl;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.util.BundleBuilder;
 import hcxprovider.hcxproviderconsumer.dto.Message;
 import hcxprovider.hcxproviderconsumer.dto.MessageResDTO;
 import hcxprovider.hcxproviderconsumer.dto.PreAuthDetails;
@@ -20,6 +21,8 @@ import io.hcxprotocol.init.HCXIntegrator;
 import io.hcxprotocol.utils.Operations;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.ContactPoint.ContactPointSystem;
 import org.joda.time.DateTime;
@@ -190,6 +193,7 @@ public class ListenerServiceImpl implements ListenerService {
 
         Claim claim = new Claim();
         claim.setUse(Claim.Use.PREAUTHORIZATION);
+        claim.setId("Claim/1");
         claim.addIdentifier().setSystem("ClaimId").setValue(preAuth.getClaim().getId().toString());
         claim.setEnterer(new Reference("Practitioner/id"));
         claim.setCreated(new Date(preAuth.getClaim().getCreatedDate()));
@@ -210,9 +214,33 @@ public class ListenerServiceImpl implements ListenerService {
         //67
 
         //37(3rd)
+        Composition composition = new Composition();
+        composition.setId(UUID.randomUUID().toString());
+        composition.setStatus(Composition.CompositionStatus.FINAL);
+        composition.getType().addCoding().setSystem("https://www.hcx.org/document-type");
+        composition.getType().addCoding().setCode("HcxClaimRequest");
+        composition.addAuthor().setReference("Organization/1");
+        composition.setDate(new Date());
+        composition.setTitle("Claim Request");
+        composition.addSection().addEntry().setReference("Claim/1");
 
-        IParser p = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
-        String messageString = p.encodeResourceToString(claim);
+        FhirContext fhirctx = FhirContext.forR4();
+        Bundle bundle = new Bundle();
+        bundle.setId(UUID.randomUUID().toString());
+        bundle.setType(Bundle.BundleType.DOCUMENT);
+        bundle.addEntry().setFullUrl(composition.getId()).setResource(composition);
+        bundle.addEntry().setFullUrl(patient.getId()).setResource(patient);
+        bundle.addEntry().setFullUrl(carePractitioner.getId()).setResource(carePractitioner);
+        bundle.addEntry().setFullUrl(organization.getId()).setResource(organization);
+        bundle.addEntry().setFullUrl(organizationInsurer.getId()).setResource(organizationInsurer);
+        bundle.addEntry().setFullUrl(entererPractitioner.getId()).setResource(entererPractitioner);
+        bundle.addEntry().setFullUrl(procedure.getId()).setResource(procedure);
+        bundle.addEntry().setFullUrl(condition.getId()).setResource(condition);
+        bundle.addEntry().setFullUrl(claim.getId()).setResource(claim);
+
+
+        IParser p = fhirctx.newJsonParser().setPrettyPrint(true);
+        String messageString = p.encodeResourceToString(bundle);
         System.out.println("here is the json " + messageString);
         //log.info("Document bundle: {}", ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(document));
         return "success";
