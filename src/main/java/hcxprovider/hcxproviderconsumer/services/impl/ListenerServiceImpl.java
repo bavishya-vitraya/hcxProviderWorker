@@ -6,7 +6,6 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import hcxprovider.hcxproviderconsumer.dto.Message;
 import hcxprovider.hcxproviderconsumer.dto.MessageResDTO;
 import hcxprovider.hcxproviderconsumer.dto.PreAuthDetails;
-import hcxprovider.hcxproviderconsumer.dto.Procedure;
 import hcxprovider.hcxproviderconsumer.model.ClaimRequest;
 import hcxprovider.hcxproviderconsumer.model.CoverageEligibilityRequest;
 import hcxprovider.hcxproviderconsumer.model.PreAuthRequest;
@@ -128,16 +127,25 @@ public class ListenerServiceImpl implements ListenerService {
     public String buildClaimFhirProfile(PreAuthRequest preAuthRequest) {
         PreAuthDetails preAuth = preAuthRequest.getPreAuthReq();
 
-        Practitioner practitioner = new Practitioner();
-        practitioner.setId("Practitioner/1");
-        practitioner.addIdentifier().setValue(preAuth.getClaim().getCreatorId().toString());
+
+        Practitioner entererPractitioner = new Practitioner();
+        entererPractitioner.setId("Practitioner/1");
+        entererPractitioner.addIdentifier().setValue(preAuth.getClaim().getCreatorId().toString());
+
+        Practitioner carePractitioner = new Practitioner();
+        carePractitioner.setId("Practioner/2");
+        carePractitioner.addName().addGiven(preAuth.getClaimIllnessTreatmentDetails().getDoctorsDetails());
+        carePractitioner.addQualification().getCode().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getDoctorsDetails());
 
         Organization organization = new Organization();
         organization.setId("Organization/1");
         organization.addIdentifier().setValue(preAuth.getClaim().getHospitalId().toString());
-        organization.addIdentifier().setValue(preAuth.getClaim().getInsuranceAgencyId().toString());
-        // organization.addContact().setPurpose(preAuth.getClaim().getCityName());
 
+        // organization.addContact().setPurpose(preAuth.getClaim().getCityName());26
+
+        Organization organizationInsurer = new Organization();
+        organizationInsurer.setId("Organization/2");
+        organizationInsurer.addIdentifier().setValue(preAuth.getClaim().getInsuranceAgencyId().toString());
 
         Patient patient = new Patient();
         patient.addIdentifier().setValue(preAuth.getClaim().getHospitalPatientId());
@@ -150,17 +158,19 @@ public class ListenerServiceImpl implements ListenerService {
         patient.addContact().addTelecom().setSystem(ContactPointSystem.EMAIL).setValue(preAuth.getClaim().getPatient_email_id());
         //47
 
+        Coverage insuranceCoverage = new Coverage();
+        insuranceCoverage.setId("Coverage/1");
+        insuranceCoverage.setSubscriberId(preAuth.getClaim().getMedicalCardId());
+        insuranceCoverage.setPolicyHolder(new Reference("Patient/1"));
+        insuranceCoverage.addIdentifier().setValue(preAuth.getClaim().getPolicyNumber());
+        // coverage.setType() 23
+        //25
+        insuranceCoverage.getPeriod().setEnd(new Date(preAuth.getClaim().getPolicyEndDate()));
+        insuranceCoverage.getPeriod().setStart(new Date(preAuth.getClaim().getPolicyStartDate()));
+
 
         Coverage coverage = new Coverage();
-        coverage.setId("Coverage/1");
-        coverage.setSubscriberId(preAuth.getClaim().getMedicalCardId());
-        coverage.setPolicyHolder(new Reference("Patient/1"));
-        coverage.addIdentifier().setValue(preAuth.getClaim().getPolicyNumber());
-        coverage.getType().addCoding().setCode(preAuth.getClaim().getPolicyType());
-        //25
-        coverage.getPeriod().setEnd(new Date(preAuth.getClaim().getPolicyEndDate()));
         coverage.addClass_().setValue(preAuth.getClaim().getPolicyName());
-        coverage.getPeriod().setStart(new Date(preAuth.getClaim().getPolicyStartDate()));
         // coverage37
 
         Meta meta = new Meta();
@@ -170,6 +180,13 @@ public class ListenerServiceImpl implements ListenerService {
         Condition condition = new Condition();
         condition.setId("Condition/1");
         condition.getCode().setText(preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetails());
+        condition.setRecordedDate(new Date(preAuth.getClaimIllnessTreatmentDetails().getDateOfDiagnosis()));
+
+        Procedure procedure = new Procedure();
+        procedure.setId("Procedure/1");
+        procedure.addFocalDevice().getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getLeftImplant().toString()).setSystem("LeftImplant");
+        procedure.addFocalDevice().getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getRightImplant().toString()).setSystem("RightImplant");
+
 
         Claim claim = new Claim();
         claim.setUse(Claim.Use.PREAUTHORIZATION);
@@ -179,6 +196,7 @@ public class ListenerServiceImpl implements ListenerService {
         claim.setStatus(Claim.ClaimStatus.CANCELLED);
         claim.setProvider(new Reference("Organization/1"));
         claim.setPatient(new Reference("Patient/1"));
+        claim.setInsurer(new Reference("Organization/2"));
         claim.addInsurance().setCoverage(new Reference("Coverage/1"));
         claim.setMeta(meta);
         claim.addIdentifier().setSystem("claimIllnessTreatmentDetails").setValue(preAuth.getClaimIllnessTreatmentDetails().getClaimId().toString());
@@ -187,6 +205,10 @@ public class ListenerServiceImpl implements ListenerService {
         claim.addSupportingInfo().getTimingDateType().setValue(new Date(preAuth.getClaim().getPolicyInceptionDate()));
         claim.addSupportingInfo().getCategory().addCoding().setSystem("INF");
         claim.addSupportingInfo().getCode().addCoding().setSystem("INF-1");
+        claim.addProcedure().getProcedureReference().setReference("Procedure/1");
+        claim.addCareTeam().getProvider().setReference("Practioner/2");
+        //67
+
         //37(3rd)
 
         IParser p = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
