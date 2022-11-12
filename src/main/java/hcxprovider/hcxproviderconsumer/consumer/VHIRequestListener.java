@@ -42,7 +42,7 @@ public class VHIRequestListener {
     public void recievedRequest(Message msg) throws Exception {
         try {
             log.info("retrieved message :{}",msg);
-            boolean result = listenerService.hcxGenerate(msg);
+            boolean result = listenerService.hcxGenerateRequest(msg);
             log.info(String.valueOf(result));
         }
         catch(Exception exception){
@@ -53,32 +53,12 @@ public class VHIRequestListener {
     @RabbitListener(queues = Constants.RES_QUEUE)
     public void recievedResponse(MessageResDTO msg) throws Exception {
         try {
-//            log.info(message);
-//            Gson json = new Gson();
-//            MessageResDTO msg = new MessageResDTO();
-//            msg = (MessageResDTO) json.fromJson(message,MessageResDTO.class);
-             log.info("retrieved message :{}", msg);
-            String resType = msg.getResponseType();
-            log.info("Response Type from Message Class object"+resType);
-            CoverageEligibilityResponse coverageEligibilityResponse = new CoverageEligibilityResponse();
-            ClaimResponse claimResponse = new ClaimResponse();
-            PreAuthResponse preAuthResponse = new PreAuthResponse();
-            if (resType.equalsIgnoreCase(Constants.COVERAGE_ELIGIBILITY)) {
-                coverageEligibilityResponse = coverageEligibilityResponseRepo.findCoverageEligibilityResponseById(msg.getResponseId());
-            } else if (resType.equalsIgnoreCase(Constants.CLAIM)) {
-                claimResponse = claimResponseRepo.findClaimResponseById(msg.getResponseId());
-            } else if (resType.equalsIgnoreCase(Constants.PRE_AUTH)) {
-                preAuthResponse= preAuthResponseRepo.findPreAuthResponseById(msg.getResponseId());
-            }
-            log.info("CoverageEligibilityResponse:{}", coverageEligibilityResponse);
-            log.info("ClaimResponse:{}", claimResponse);
-            log.info("PreAuthResponse:{}", preAuthResponse);
-            //boolean result = listenerService.hcxGenerate(resType);
-           // log.info(String.valueOf(result));
+            log.info("retrieved message :{}",msg);
+            boolean result = listenerService.hcxGenerateResponse(msg);
+            log.info(String.valueOf(result));
         }
         catch(Exception exception){
             log.error("Exception :"+exception);
         }
-
     }
 }
