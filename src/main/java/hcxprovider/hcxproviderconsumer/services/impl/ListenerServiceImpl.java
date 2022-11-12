@@ -20,6 +20,7 @@ import io.hcxprotocol.utils.Operations;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.ContactPoint.ContactPointSystem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
@@ -81,103 +82,99 @@ public class ListenerServiceImpl implements ListenerService {
 
     @Override
     public boolean hcxGenerate(Message msg) throws Exception {
-        //File payloadFile = new ClassPathResource("input/preAuthTest.txt").getFile();
-        //String payload = FileUtils.readFileToString(payloadFile);
+        File payloadFile = new ClassPathResource("input/claim.txt").getFile();
+        String payload = FileUtils.readFileToString(payloadFile);
 
         CoverageEligibilityRequest coverageEligibilityRequest = new CoverageEligibilityRequest();
         ClaimRequest claimRequest = new ClaimRequest();
         PreAuthRequest preAuthRequest = new PreAuthRequest();
         String reqType = msg.getRequestType();
-        String payload;
-        Operations operation;
-        if (reqType.equalsIgnoreCase(Constants.COVERAGE_ELIGIBILITY)) {
-            coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getRequestId());
-            log.info("CoverageEligibility:{}", coverageEligibilityRequest);
-            operation = Operations.COVERAGE_ELIGIBILITY_CHECK;
-        } else if (reqType.equalsIgnoreCase(Constants.CLAIM)) {
-            claimRequest = claimRequestRepo.findClaimRequestById(msg.getRequestId());
-            log.info("ClaimReq:{}", claimRequest);
-            operation = Operations.CLAIM_SUBMIT;
-            payload = buildClaimFhirProfile(preAuthRequest);
-        } else if (reqType.equalsIgnoreCase(Constants.PRE_AUTH)) {
-            preAuthRequest = preAuthRequestRepo.findPreAuthRequestById(msg.getRequestId());
-            log.info("PreAuthReq:{}", preAuthRequest);
-            operation = Operations.PRE_AUTH_SUBMIT;
-            payload = buildClaimFhirProfile(preAuthRequest);
-        }
+
+        Operations operation = Operations.PRE_AUTH_SUBMIT;
+//        if (reqType.equalsIgnoreCase(Constants.COVERAGE_ELIGIBILITY)) {
+//            coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getRequestId());
+//            log.info("CoverageEligibility:{}", coverageEligibilityRequest);
+//            operation = Operations.COVERAGE_ELIGIBILITY_CHECK;
+//        } else if (reqType.equalsIgnoreCase(Constants.CLAIM)) {
+//            claimRequest = claimRequestRepo.findClaimRequestById(msg.getRequestId());
+//            log.info("ClaimReq:{}", claimRequest);
+//            operation = Operations.CLAIM_SUBMIT;
+//            payload = buildClaimFhirProfile(preAuthRequest);
+//        } else if (reqType.equalsIgnoreCase(Constants.PRE_AUTH)) {
+//            preAuthRequest = preAuthRequestRepo.findPreAuthRequestById(msg.getRequestId());
+//            log.info("PreAuthReq:{}", preAuthRequest);
+//            operation = Operations.PRE_AUTH_SUBMIT;
+//            payload = buildClaimFhirProfile(preAuthRequest);
+//        }
         HCXIntegrator.init(setConfig());
-        Map<String,Object> output = new HashMap<>();
+        Map<String, Object> output = new HashMap<>();
         HCXOutgoingRequest hcxOutgoingRequest = new HCXOutgoingRequest();
-        //Boolean response = hcxOutgoingRequest.generate(payload,operation,recipientCode,output);
-        //log.info(String.valueOf(response));
-       // log.info("{}",output);
+        Boolean response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
+        log.info(String.valueOf(response));
+        log.info("{}", output);
         return true;
     }
 
     @Override
     public String buildClaimFhirProfile(PreAuthRequest preAuthRequest) {
-        PreAuthDetails req = preAuthRequest.getPreAuthReq();
+        PreAuthDetails preAuth = preAuthRequest.getPreAuthReq();
+        Identifier identifier = new Identifier();
 
         Practitioner practitioner = new Practitioner();
-        practitioner.addIdentifier().setId(req.getClaim().getCreatorId().toString());
+        practitioner.setId("Practitioner/1");
+        practitioner.addIdentifier().setValue(preAuth.getClaim().getCreatorId().toString());
+
+        Organization organization = new Organization();
+        organization.setId("Organization/1");
+        organization.addIdentifier().setValue(preAuth.getClaim().getHospitalId().toString());
+        organization.addIdentifier().setValue(preAuth.getClaim().getInsuranceAgencyId().toString());
+        // organization.addContact().setPurpose(preAuth.getClaim().getCityName());
+
+
+        Patient patient = new Patient();
+        patient.addIdentifier().setValue(preAuth.getClaim().getHospitalPatientId());
+        patient.setId("Patient/1");
+        patient.setBirthDate(new Date(preAuth.getClaim().getDob()));
+        patient.getGenderElement().setValueAsString(preAuth.getClaim().getGender());
+        patient.addName().addGiven(preAuth.getClaim().getPatientName());
+        patient.addTelecom().setValue(preAuth.getClaim().getPatient_mobile_no());
+        patient.addContact().addTelecom().setSystem(ContactPointSystem.PHONE).setValue(preAuth.getClaim().getAttendent_mobile_no());
+        patient.addContact().addTelecom().setSystem(ContactPointSystem.EMAIL).setValue(preAuth.getClaim().getPatient_email_id());
+        //47
+
+
+        Coverage coverage = new Coverage();
+        coverage.setId("Coverage/1");
+        coverage.setSubscriberId(preAuth.getClaim().getMedicalCardId());
+        coverage.setPolicyHolder(new Reference("Patient/1"));
+        coverage.addIdentifier().setValue(preAuth.getClaim().getPolicyNumber());
+        // coverage.setType() 23
+        //25
+        coverage.getPeriod().setEnd(new Date(preAuth.getClaim().getPolicyEndDate()));
+        coverage.addClass_().setValue(preAuth.getClaim().getPolicyName());
+        coverage.getPeriod().setStart(new Date(preAuth.getClaim().getPolicyStartDate()));
+        // coverage37
+
+        Meta meta = new Meta();
+        meta.setProfile(Collections.singletonList(new CanonicalType(preAuth.getClaim().getMetadata())));
+
 
         Claim claim = new Claim();
         claim.setUse(Claim.Use.PREAUTHORIZATION);
-        claim.addIdentifier().setValue(req.getServiceTypeId().toString());
-        claim.getEnterer().setId(req.getClaim().getCreatorId().toString());
-        claim.setCreated(new Date(req.getClaim().getCreatedDate()));
+        claim.addIdentifier().setSystem("ClaimId").setValue(preAuth.getClaim().getId().toString());
+        claim.setEnterer(new Reference("Practitioner/id"));
+        claim.setCreated(new Date(preAuth.getClaim().getCreatedDate()));
         claim.setStatus(Claim.ClaimStatus.CANCELLED);
-        claim.getProvider().setId(req.getClaim().getHospitalId().toString());
-        claim.getPatient().setId(req.getClaim().getHospitalPatientId());
-        claim.getInsurer().setId(req.getClaim().getInsuranceAgencyId().toString());
-        // claim.getPatient().setDOb claim.dob 17
-        //claim.getPatient(). claim.gender 18
-        claim.getPatient().getIdentifier().setId(req.getClaim().getMedicalCardId());
-        // claim.getPatient() claim.name 20
-        claim.addInsurance().getCoverage().setReference(req.getClaim().getPolicyHolderName());
-        claim.addInsurance().getCoverage().setReference(req.getClaim().getPolicyNumber());
-        claim.addInsurance().getCoverage().setReference(req.getClaim().getPolicyType());
-        claim.addInsurance().getCoverage().setReference(req.getClaim().getPolicyEndDate());
-        //29
-        claim.addInsurance().getCoverage().setReference(req.getClaim().getPolicyStartDate());
-        claim.addSupportingInfo().getCategory().addCoding().setCode(req.getClaim().getPreExistingDesease());
-        claim.getMeta().setSource(req.getClaim().getMetadata());
-        //  claim.getPatient().ge44-46
-        claim.addSupportingInfo().getCategory().addCoding().setCode(req.getClaim().getPed_list());
-        claim.addIdentifier().setId(req.getClaimIllnessTreatmentDetails().getClaimId().toString());
-        claim.addDiagnosis().getDiagnosis().setUserData("chronicIllnessDetails", req.getClaimIllnessTreatmentDetails().getChronicIllnessDetails().toString());
-        claim.addSupportingInfo().getCategory().addCoding().setCode(req.getClaimIllnessTreatmentDetails().getLineOfTreatmentDetails());
-        claim.addProcedure().getProcedure().setUserData("leftImplant", req.getClaimIllnessTreatmentDetails().getLeftImplant());
-        claim.addProcedure().getProcedure().setUserData("rightImplant", req.getClaimIllnessTreatmentDetails().getRightImplant());
-        claim.addDiagnosis().getDiagnosis().setUserData("dateOfDiagnosis", req.getClaimIllnessTreatmentDetails().getDateOfDiagnosis());
-        claim.addCareTeam().getProvider().setReference(req.getClaimIllnessTreatmentDetails().getDoctorsDetails());
-        // claim.addSupportingInfo().getCategory().addCoding(req.getClaimIllnessTreatmentDetails().getChronicIllnessDetailsJSON().getChronicIllnessList());
-        claim.addIdentifier().setId(req.getClaimAdmissionDetails().getClaimId().toString());
-        claim.addSupportingInfo().getCategory().addCoding().setCode(req.getClaimAdmissionDetails().getAdmissionDate());
-        claim.addSupportingInfo().getCategory().addCoding().setCode(req.getClaimAdmissionDetails().getDischargeDate());
-        claim.addItem().addDetail().getCategory().addCoding().setCode(req.getClaimAdmissionDetails().getRoomType());
-        claim.addItem().getServiced().setUserData("stayDuration", req.getClaimAdmissionDetails().getStayDuration());
-        // claim.addItem().addDetail().getNet().setCurrency((req.getClaimAdmissionDetails().getCostEstimation()));
-        claim.addSupportingInfo().getCategory().addCoding().setCode(req.getClaimAdmissionDetails().getIcuStayDuration().toString());
-        claim.addItem().addDetail().getCategory().addCoding().setCode((req.getHospitalServiceType().getRoomType()));
-        claim.addProcedure().getProcedure().setUserData("description", req.getProcedure().getDescription());
-        claim.addProcedure().getProcedure().setUserData("name", req.getProcedure().getName());
-        claim.addProcedure().getProcedure().setUserData("procedureCode", req.getProcedure().getProcedureCode());
-        claim.addProcedure().getProcedure().setUserData("procedureId", req.getProcedureMethod().getProcedureId());
-        claim.addProcedure().getProcedure().setUserData("procedureMethodName", req.getProcedureMethod().getProcedureMethodName());
-        claim.addProcedure().getProcedure().setUserData("procedureMethodDisplayName", req.getProcedureMethod().getProcedureMethodDisplayName());
-        claim.addProcedure().getProcedure().setUserData("procedureCode", req.getProcedureMethod().getProcedureCode());
-        claim.addSupportingInfo().getCategory().addCoding().setCode(req.getDocumentMasterList().get(0).getFileName());
-        claim.addSupportingInfo().getCategory().addCoding().setCode(req.getDocumentMasterList().get(0).getStorageFileName());
-        claim.addDiagnosis().getDiagnosis().setUserData("illnessName", req.getIllness().getIllnessName());
-        claim.addDiagnosis().getDiagnosis().setUserData("defaultICDCode", req.getIllness().getDefaultICDCode());
-        claim.addDiagnosis().getDiagnosis().setUserData("illnessDescription", req.getIllness().getIllnessDescription());
-        claim.addDiagnosis().getDiagnosis().setUserData("relatedDisease", req.getIllness().getRelatedDisease());
-        claim.addDiagnosis().getDiagnosis().setUserData("active", req.getIllness().isActive());
+        claim.setProvider(new Reference("Organization/1"));
+        claim.setPatient(new Reference("Patient/1"));
+        claim.addInsurance().setCoverage(new Reference("Coverage/1"));
+        claim.setMeta(meta);
+        //claim.addIdentifier().setSystem("claimIllnessTreatmentDetails").
+
 
         IParser p = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
-        String messageString = p.encodeResourceToString(claim);
-        System.out.println("here is the json " + messageString);
+        //String messageString = p.encodeResourceToString(claim);
+        //System.out.println("here is the json " + messageString);
         //log.info("Document bundle: {}", ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(document));
         return "success";
     }
