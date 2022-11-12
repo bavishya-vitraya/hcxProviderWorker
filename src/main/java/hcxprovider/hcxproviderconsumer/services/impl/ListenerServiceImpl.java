@@ -82,36 +82,36 @@ public class ListenerServiceImpl implements ListenerService {
 
     @Override
     public boolean hcxGenerate(Message msg) throws Exception {
-        File payloadFile = new ClassPathResource("input/claim.txt").getFile();
-        String payload = FileUtils.readFileToString(payloadFile);
-
+//        File payloadFile = new ClassPathResource("input/claim.txt").getFile();
+//        String payload = FileUtils.readFileToString(payloadFile);
+        String payload;
         CoverageEligibilityRequest coverageEligibilityRequest = new CoverageEligibilityRequest();
         ClaimRequest claimRequest = new ClaimRequest();
         PreAuthRequest preAuthRequest = new PreAuthRequest();
         String reqType = msg.getRequestType();
 
         Operations operation = Operations.PRE_AUTH_SUBMIT;
-//        if (reqType.equalsIgnoreCase(Constants.COVERAGE_ELIGIBILITY)) {
-//            coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getRequestId());
-//            log.info("CoverageEligibility:{}", coverageEligibilityRequest);
-//            operation = Operations.COVERAGE_ELIGIBILITY_CHECK;
-//        } else if (reqType.equalsIgnoreCase(Constants.CLAIM)) {
-//            claimRequest = claimRequestRepo.findClaimRequestById(msg.getRequestId());
-//            log.info("ClaimReq:{}", claimRequest);
-//            operation = Operations.CLAIM_SUBMIT;
-//            payload = buildClaimFhirProfile(preAuthRequest);
-//        } else if (reqType.equalsIgnoreCase(Constants.PRE_AUTH)) {
-//            preAuthRequest = preAuthRequestRepo.findPreAuthRequestById(msg.getRequestId());
-//            log.info("PreAuthReq:{}", preAuthRequest);
-//            operation = Operations.PRE_AUTH_SUBMIT;
-//            payload = buildClaimFhirProfile(preAuthRequest);
-//        }
+        if (reqType.equalsIgnoreCase(Constants.COVERAGE_ELIGIBILITY)) {
+            coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getRequestId());
+            log.info("CoverageEligibility:{}", coverageEligibilityRequest);
+            operation = Operations.COVERAGE_ELIGIBILITY_CHECK;
+        } else if (reqType.equalsIgnoreCase(Constants.CLAIM)) {
+            claimRequest = claimRequestRepo.findClaimRequestById(msg.getRequestId());
+            log.info("ClaimReq:{}", claimRequest);
+            operation = Operations.CLAIM_SUBMIT;
+            payload = buildClaimFhirProfile(preAuthRequest);
+        } else if (reqType.equalsIgnoreCase(Constants.PRE_AUTH)) {
+            preAuthRequest = preAuthRequestRepo.findPreAuthRequestById(msg.getRequestId());
+            log.info("PreAuthReq:{}", preAuthRequest);
+            operation = Operations.PRE_AUTH_SUBMIT;
+            payload = buildClaimFhirProfile(preAuthRequest);
+        }
         HCXIntegrator.init(setConfig());
         Map<String, Object> output = new HashMap<>();
         HCXOutgoingRequest hcxOutgoingRequest = new HCXOutgoingRequest();
-        Boolean response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
-        log.info(String.valueOf(response));
-        log.info("{}", output);
+        //  Boolean response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
+//        log.info(String.valueOf(response));
+//        log.info("{}", output);
         return true;
     }
 
@@ -135,7 +135,7 @@ public class ListenerServiceImpl implements ListenerService {
         patient.addIdentifier().setValue(preAuth.getClaim().getHospitalPatientId());
         patient.setId("Patient/1");
         patient.setBirthDate(new Date(preAuth.getClaim().getDob()));
-        patient.getGenderElement().setValueAsString(preAuth.getClaim().getGender());
+        // patient.getGenderElement().setValueAsString(preAuth.getClaim().getGender());
         patient.addName().addGiven(preAuth.getClaim().getPatientName());
         patient.addTelecom().setValue(preAuth.getClaim().getPatient_mobile_no());
         patient.addContact().addTelecom().setSystem(ContactPointSystem.PHONE).setValue(preAuth.getClaim().getAttendent_mobile_no());
@@ -159,6 +159,10 @@ public class ListenerServiceImpl implements ListenerService {
         meta.setProfile(Collections.singletonList(new CanonicalType(preAuth.getClaim().getMetadata())));
 
 
+        Condition condition = new Condition();
+        condition.setId("Condition/1");
+        condition.getCode().setText(preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetails());
+
         Claim claim = new Claim();
         claim.setUse(Claim.Use.PREAUTHORIZATION);
         claim.addIdentifier().setSystem("ClaimId").setValue(preAuth.getClaim().getId().toString());
@@ -169,12 +173,13 @@ public class ListenerServiceImpl implements ListenerService {
         claim.setPatient(new Reference("Patient/1"));
         claim.addInsurance().setCoverage(new Reference("Coverage/1"));
         claim.setMeta(meta);
-        //claim.addIdentifier().setSystem("claimIllnessTreatmentDetails").
+        claim.addIdentifier().setSystem("claimIllnessTreatmentDetails").setValue(preAuth.getClaimIllnessTreatmentDetails().getClaimId().toString());
+        claim.addDiagnosis().getDiagnosisReference().setReference("Condition/1");
 
 
         IParser p = FhirContext.forR4().newJsonParser().setPrettyPrint(true);
-        //String messageString = p.encodeResourceToString(claim);
-        //System.out.println("here is the json " + messageString);
+        String messageString = p.encodeResourceToString(claim);
+        System.out.println("here is the json " + messageString);
         //log.info("Document bundle: {}", ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(document));
         return "success";
     }
