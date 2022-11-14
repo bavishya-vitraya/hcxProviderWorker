@@ -134,10 +134,10 @@ public class ListenerServiceImpl implements ListenerService {
 
         Practitioner entererPractitioner = new Practitioner();
         entererPractitioner.setId("Practitioner/1");
-        entererPractitioner.addIdentifier().setValue(preAuth.getClaim().getCreatorId().toString()).setSystem(entererPractitioner.getId());
+        entererPractitioner.addIdentifier().setValue(preAuth.getClaim().getCreatorId().toString()).setSystem("http://hl7.org/fhir/resource-types");
 
         Practitioner carePractitioner = new Practitioner();
-        carePractitioner.setId("Practioner/2");
+        carePractitioner.setId("Practitioner/2");
         carePractitioner.addName().addGiven(preAuth.getClaimIllnessTreatmentDetails().getDoctorsDetails());
         carePractitioner.addQualification().getCode().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getDoctorsDetails());
 
@@ -158,15 +158,15 @@ public class ListenerServiceImpl implements ListenerService {
         patient.getGenderElement().setValue(AdministrativeGender.valueOf(preAuth.getClaim().getGender()));
         patient.addName().addGiven(preAuth.getClaim().getPatientName());
         patient.addTelecom().setValue(preAuth.getClaim().getPatient_mobile_no());
-        patient.addContact().addTelecom().setSystem(ContactPointSystem.PHONE).setValue(preAuth.getClaim().getAttendent_mobile_no());
-        patient.addContact().addTelecom().setSystem(ContactPointSystem.EMAIL).setValue(preAuth.getClaim().getPatient_email_id());
+//        patient.addContact().addTelecom().setSystem(ContactPointSystem.PHONE).setValue(preAuth.getClaim().getAttendent_mobile_no());
+//        patient.addContact().addTelecom().setSystem(ContactPointSystem.EMAIL).setValue(preAuth.getClaim().getPatient_email_id());
         //47
 
         Coverage insuranceCoverage = new Coverage();
         insuranceCoverage.setId("Coverage/1");
         insuranceCoverage.setSubscriberId(preAuth.getClaim().getMedicalCardId());
         insuranceCoverage.setPolicyHolder(new Reference("Patient/1"));
-        insuranceCoverage.addIdentifier().setValue(preAuth.getClaim().getPolicyNumber()).setSystem(insuranceCoverage.getId());
+        insuranceCoverage.addIdentifier().setValue(preAuth.getClaim().getPolicyNumber()).setSystem("https://www.gicofIndia.in/policies");
         // coverage.setType() 23
         //25
         insuranceCoverage.getPeriod().setEnd(new Date(preAuth.getClaim().getPolicyEndDate()));
@@ -178,7 +178,7 @@ public class ListenerServiceImpl implements ListenerService {
         // coverage37
 
         Meta meta = new Meta();
-        meta.setProfile(Collections.singletonList(new CanonicalType(preAuth.getClaim().getMetadata())));
+        //  meta.setSource(preAuth.getClaim().getMetadata());
 
 
         Condition condition = new Condition();
@@ -204,7 +204,7 @@ public class ListenerServiceImpl implements ListenerService {
         procedure.addFocalDevice().setManipulated(new Reference("Device/1")).getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getLeftImplant().toString()).setDisplay("LeftImplant");
         procedure.addFocalDevice().setManipulated(new Reference("Device/1")).getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getRightImplant().toString()).setDisplay("RightImplant");
 
-        procedure.addIdentifier().setSystem(procedure.getId()).setValue(preAuth.getProcedureMethod().getProcedureId().toString());
+        procedure.addIdentifier().setSystem("https://www.gicofIndia.in/policies").setValue(preAuth.getProcedureMethod().getProcedureId().toString());
         procedure.getCode().addCoding().setDisplay("procedureMethodName").setCode(preAuth.getProcedureMethod().getProcedureMethodName());
         procedure.getCode().addCoding().setDisplay("procedureMethodDisplayName").setCode(preAuth.getProcedureMethod().getProcedureMethodDisplayName());
         procedure.getCode().addCoding().setDisplay("procedureCode").setCode(preAuth.getProcedureMethod().getProcedureCode());
@@ -215,25 +215,24 @@ public class ListenerServiceImpl implements ListenerService {
         Claim claim = new Claim();
         claim.setUse(Claim.Use.PREAUTHORIZATION);
         claim.setId("Claim/1");
-        claim.addIdentifier().setSystem(claim.getId()).setValue(preAuth.getClaim().getId().toString());
-        claim.setEnterer(new Reference("Practitioner/id"));
+        claim.addIdentifier().setSystem("https://www.tmh.in/hcx-documents").setValue(preAuth.getClaim().getId().toString());
+        claim.setEnterer(new Reference("Practitioner/1"));
         claim.setCreated(new Date(preAuth.getClaim().getCreatedDate()));
         claim.setStatus(Claim.ClaimStatus.CANCELLED);
         claim.setProvider(new Reference("Organization/1"));
         claim.setPatient(new Reference("Patient/1"));
         claim.setInsurer(new Reference("Organization/2"));
-        claim.addInsurance().setCoverage(new Reference("Coverage/1"));
+        claim.addInsurance().setSequence(1).setFocal(true).setCoverage(new Reference("Coverage/1"));
         claim.setMeta(meta);
-        claim.addIdentifier().setSystem(claim.getId()).setValue(preAuth.getClaimIllnessTreatmentDetails().getClaimId().toString());
-        claim.addDiagnosis().getDiagnosisReference().setReference("Condition/1");
+        claim.addIdentifier().setSystem("https://www.gicofIndia.in/policies").setValue(preAuth.getClaimIllnessTreatmentDetails().getClaimId().toString());
+        claim.addDiagnosis().setSequence(1).getDiagnosisReference().setReference("Condition/1");
         //doubt
         claim.addSupportingInfo().setSequence(1).getCategory().addCoding().setCode(preAuth.getClaim().getPolicyInceptionDate());
-        claim.addSupportingInfo().setSequence(1).getTimingDateType().setValue(new Date(preAuth.getClaim().getPolicyInceptionDate()));
-        claim.addSupportingInfo().setSequence(1).getCategory().addCoding().setSystem("INF");
-        claim.addSupportingInfo().setSequence(1).getCode().addCoding().setSystem("INF-1");
+        claim.addSupportingInfo().setSequence(2).setCategory(new CodeableConcept().setText(preAuth.getClaim().getPolicyInceptionDate())).getTimingDateType().setValue(new Date(preAuth.getClaim().getPolicyInceptionDate()));
+        //47
 
-        claim.addProcedure().getProcedureReference().setReference("Procedure/1");
-        claim.addCareTeam().getProvider().setReference("Practioner/2");
+        claim.addProcedure().setSequence(1).getProcedureReference().setReference("Procedure/1");
+        claim.addCareTeam().setSequence(1).getProvider().setReference("Practitioner/2");
 
         // doubt
         claim.getType().setText("claim");
@@ -242,36 +241,32 @@ public class ListenerServiceImpl implements ListenerService {
         //67
 
         //claim admission details
-        claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode("ONS-1").setDisplay(preAuth.getClaimAdmissionDetails().getAdmissionDate());
-        claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode("ONS-2").setDisplay(preAuth.getClaimAdmissionDetails().getDischargeDate());
-        claim.addItem().addDetail().getCategory().addCoding().setCode(preAuth.getClaimAdmissionDetails().getRoomType()).setDisplay("roomType");
-        claim.addItem().addDetail().getProductOrService().addCoding().setDisplay("roomType").setCode(preAuth.getClaimAdmissionDetails().getRoomType());
+//        claim.addSupportingInfo().setSequence(5).getCategory().addCoding().setSystem("ONS").setCode("ONS-1").setDisplay(preAuth.getClaimAdmissionDetails().getAdmissionDate());
+//        claim.addSupportingInfo().setSequence(6).getCategory().addCoding().setSystem("ONS").setCode("ONS-2").setDisplay(preAuth.getClaimAdmissionDetails().getDischargeDate());
+        claim.addItem().setSequence(1).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(1).setProductOrService(new CodeableConcept().setText("roomType")).getCategory().addCoding().setCode(preAuth.getClaimAdmissionDetails().getRoomType()).setDisplay("roomType");
+        claim.addItem().setSequence(2).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(2).setProductOrService(new CodeableConcept().setText("roomType")).getProductOrService().addCoding().setDisplay("roomType").setCode(preAuth.getClaimAdmissionDetails().getRoomType());
         //76
 
         //document master list
-        claim.addItem().addDetail().getNet().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
-        claim.addItem().addDetail().getQuantity().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
-        claim.addItem().addDetail().getCategory().addCoding().setDisplay("costEstimation").setCode(preAuth.getClaimAdmissionDetails().getCostEstimation());
-        claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode(String.valueOf(preAuth.getClaimAdmissionDetails().isIcuStay()));
-        claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode("ONS-6").setDisplay(preAuth.getClaimAdmissionDetails().getIcuStayDuration().toString());
-        claim.addSupportingInfo().getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getDocumentType());
-        claim.addSupportingInfo().getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getFileName());
-        claim.addSupportingInfo().getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getStorageFileName());
-        claim.addSupportingInfo().getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getFileType());
+        claim.addItem().setSequence(3).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(3).setProductOrService(new CodeableConcept().setText("CostEstimation")).getNet().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
+        claim.addItem().setSequence(4).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(4).setProductOrService(new CodeableConcept().setText("CostEstimation")).getQuantity().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
+        claim.addItem().setSequence(5).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(5).setProductOrService(new CodeableConcept().setText("CostEstimation")).getCategory().addCoding().setDisplay("costEstimation").setCode(preAuth.getClaimAdmissionDetails().getCostEstimation());
+//        claim.addSupportingInfo().setSequence(7).getCategory().addCoding().setSystem("ONS").setCode(String.valueOf(preAuth.getClaimAdmissionDetails().isIcuStay()));
+//        claim.addSupportingInfo().setSequence(8).getCategory().addCoding().setSystem("ONS").setCode("ONS-6").setDisplay(preAuth.getClaimAdmissionDetails().getIcuStayDuration().toString());
+//        claim.addSupportingInfo().setSequence(9).getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getDocumentType());
+//        claim.addSupportingInfo().setSequence(10).getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getFileName());
+//        claim.addSupportingInfo().setSequence(11).getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getStorageFileName());
+//        claim.addSupportingInfo().setSequence(12).getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getFileType());
 
 
         // hospitalServiceType completed
-        claim.addItem().addDetail().getCategory().addCoding().setDisplay("roomType").setCode(preAuth.getHospitalServiceType().getRoomType());
-        claim.addItem().getUnitPrice().setCurrency("INR").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
-        //procedure method code completed
-        //document master list completed
-        //illness completed
-        //procedure completed
+        claim.addItem().setSequence(6).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(6).setProductOrService(new CodeableConcept().setText("roomType")).getCategory().addCoding().setDisplay("roomType").setCode(preAuth.getHospitalServiceType().getRoomType());
+        claim.addItem().setSequence(7).setProductOrService(new CodeableConcept().setText("roomTariffPerDay")).getUnitPrice().setCurrency("INR").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
 
 
         //37(3rd)
         Composition composition = new Composition();
-        composition.setId("composition/"+UUID.randomUUID().toString());
+        composition.setId("composition/" + UUID.randomUUID().toString());
         composition.setStatus(Composition.CompositionStatus.FINAL);
         composition.getType().addCoding().setSystem("https://www.hcx.org/document-type");
         composition.getType().addCoding().setCode("HcxClaimRequest");
@@ -284,8 +279,7 @@ public class ListenerServiceImpl implements ListenerService {
         Bundle bundle = new Bundle();
         bundle.setId(UUID.randomUUID().toString());
         bundle.setType(Bundle.BundleType.DOCUMENT);
-        bundle.getIdentifier().setSystem("https://www.tmh.in/bundle");
-        bundle.getIdentifier().setValue(bundle.getId());
+        bundle.getIdentifier().setSystem("https://www.tmh.in/bundle").setValue(bundle.getId());
         bundle.setTimestamp(new Date());
         bundle.addEntry().setFullUrl(composition.getId()).setResource(composition);
         bundle.addEntry().setFullUrl(patient.getId()).setResource(patient);
