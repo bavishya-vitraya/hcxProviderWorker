@@ -25,6 +25,7 @@ import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.ContactPoint.ContactPointSystem;
+import org.hl7.fhir.r4.model.Enumerations.AdministrativeGender;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -89,13 +90,13 @@ public class ListenerServiceImpl implements ListenerService {
     public boolean hcxGenerateRequest(Message msg) throws Exception {
 //        File payloadFile = new ClassPathResource("input/claim.txt").getFile();
 //        String payload = FileUtils.readFileToString(payloadFile);
-        String payload;
+        String payload = null;
         CoverageEligibilityRequest coverageEligibilityRequest = new CoverageEligibilityRequest();
         ClaimRequest claimRequest = new ClaimRequest();
         PreAuthRequest preAuthRequest = new PreAuthRequest();
         String reqType = msg.getRequestType();
 
-        Operations operation = Operations.PRE_AUTH_SUBMIT;
+        Operations operation = null;
         if (reqType.equalsIgnoreCase(Constants.COVERAGE_ELIGIBILITY)) {
             coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getRequestId());
             log.info("CoverageEligibility:{}", coverageEligibilityRequest);
@@ -114,9 +115,9 @@ public class ListenerServiceImpl implements ListenerService {
         HCXIntegrator.init(setConfig());
         Map<String, Object> output = new HashMap<>();
         HCXOutgoingRequest hcxOutgoingRequest = new HCXOutgoingRequest();
-        //  Boolean response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
-//        log.info(String.valueOf(response));
-//        log.info("{}", output);
+        Boolean response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
+        log.info(String.valueOf(response));
+        log.info("{}", output);
         return true;
     }
 
@@ -154,7 +155,7 @@ public class ListenerServiceImpl implements ListenerService {
         patient.addIdentifier().setValue(preAuth.getClaim().getHospitalPatientId());
         patient.setId("Patient/1");
         patient.setBirthDate(new Date(preAuth.getClaim().getDob()));
-        // patient.getGenderElement().setValueAsString(preAuth.getClaim().getGender());
+        patient.getGenderElement().setValue(AdministrativeGender.valueOf(preAuth.getClaim().getGender()));
         patient.addName().addGiven(preAuth.getClaim().getPatientName());
         patient.addTelecom().setValue(preAuth.getClaim().getPatient_mobile_no());
         patient.addContact().addTelecom().setSystem(ContactPointSystem.PHONE).setValue(preAuth.getClaim().getAttendent_mobile_no());
@@ -182,13 +183,24 @@ public class ListenerServiceImpl implements ListenerService {
 
         Condition condition = new Condition();
         condition.setId("Condition/1");
-        condition.getCode().setText(preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetails());
+        condition.getCode().addCoding().setSystem("ChronicIllnessDetails").setCode(preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetails());
         condition.setRecordedDate(new Date(preAuth.getClaimIllnessTreatmentDetails().getDateOfDiagnosis()));
+        condition.getCode().addCoding().setSystem("illnessName").setCode(preAuth.getIllness().getIllnessName());
+        condition.getCode().addCoding().setSystem("defaultICDCode").setCode(preAuth.getIllness().getDefaultICDCode());
+        condition.getCode().addCoding().setSystem("illnessDescription").setCode(preAuth.getIllness().getIllnessDescription());
+        condition.getCode().addCoding().setSystem("relatedDisease").setCode(preAuth.getIllness().getRelatedDisease());
+
 
         Procedure procedure = new Procedure();
         procedure.setId("Procedure/1");
         procedure.addFocalDevice().getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getLeftImplant().toString()).setSystem("LeftImplant");
         procedure.addFocalDevice().getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getRightImplant().toString()).setSystem("RightImplant");
+        procedure.addIdentifier().setSystem("procedureId").setValue(preAuth.getProcedureMethod().getProcedureId().toString());
+        procedure.getCode().addCoding().setSystem("procedureMethodName").setCode(preAuth.getProcedureMethod().getProcedureMethodName());
+        procedure.getCode().addCoding().setSystem("procedureMethodDisplayName").setCode(preAuth.getProcedureMethod().getProcedureMethodDisplayName());
+        procedure.getCode().addCoding().setSystem("procedureCode").setCode(preAuth.getProcedureMethod().getProcedureCode());
+        procedure.addNote().setText(preAuth.getProcedure().getDescription());
+        procedure.getCode().addCoding().setSystem("name").setCode(preAuth.getProcedure().getName());
 
 
         Claim claim = new Claim();
@@ -212,6 +224,34 @@ public class ListenerServiceImpl implements ListenerService {
         claim.addProcedure().getProcedureReference().setReference("Procedure/1");
         claim.addCareTeam().getProvider().setReference("Practioner/2");
         //67
+
+        //claim admission details
+        claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode("ONS-1").setDisplay(preAuth.getClaimAdmissionDetails().getAdmissionDate());
+        claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode("ONS-2").setDisplay(preAuth.getClaimAdmissionDetails().getDischargeDate());
+        claim.addItem().addDetail().getCategory().addCoding().setCode(preAuth.getClaimAdmissionDetails().getRoomType()).setSystem("roomType");
+        claim.addItem().addDetail().getProductOrService().addCoding().setSystem("roomType").setCode(preAuth.getClaimAdmissionDetails().getRoomType());
+        //76
+
+        //document master list
+        claim.addItem().addDetail().getNet().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
+        claim.addItem().addDetail().getQuantity().setValue(Double.valueOf(preAuth.getClaimAdmissionDetails().getCostEstimation()));
+        claim.addItem().addDetail().getCategory().addCoding().setSystem("costEstimation").setCode(preAuth.getClaimAdmissionDetails().getCostEstimation());
+        claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode(String.valueOf(preAuth.getClaimAdmissionDetails().isIcuStay()));
+        claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode("ONS-6").setDisplay(preAuth.getClaimAdmissionDetails().getIcuStayDuration().toString());
+        claim.addSupportingInfo().getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getDocumentType());
+        claim.addSupportingInfo().getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getFileName());
+        claim.addSupportingInfo().getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getStorageFileName());
+        claim.addSupportingInfo().getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getFileType());
+
+
+        // hospitalServiceType completed
+        claim.addItem().addDetail().getCategory().addCoding().setSystem("roomType").setCode(preAuth.getHospitalServiceType().getRoomType());
+        claim.addItem().getUnitPrice().setCurrency("Rs").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
+        //procedure method code completed
+        //document master list completed
+        //illness completed
+        //procedure completed
+
 
         //37(3rd)
         Composition composition = new Composition();
@@ -242,8 +282,8 @@ public class ListenerServiceImpl implements ListenerService {
         IParser p = fhirctx.newJsonParser().setPrettyPrint(true);
         String messageString = p.encodeResourceToString(bundle);
         System.out.println("here is the json " + messageString);
-        //log.info("Document bundle: {}", ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(document));
-        return "success";
+        // log.info("Document bundle: {}", ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(document));
+        return messageString;
     }
 
     @Override
