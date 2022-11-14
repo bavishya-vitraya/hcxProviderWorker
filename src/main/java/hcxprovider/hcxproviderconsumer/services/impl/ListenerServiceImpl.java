@@ -183,24 +183,33 @@ public class ListenerServiceImpl implements ListenerService {
 
         Condition condition = new Condition();
         condition.setId("Condition/1");
-        condition.getCode().addCoding().setSystem("ChronicIllnessDetails").setCode(preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetails());
+        condition.setSubject(new Reference("Patient/1"));
+        condition.getCode().addCoding().setDisplay("ChronicIllnessDetails").setCode(preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetails());
         condition.setRecordedDate(new Date(preAuth.getClaimIllnessTreatmentDetails().getDateOfDiagnosis()));
-        condition.getCode().addCoding().setSystem("illnessName").setCode(preAuth.getIllness().getIllnessName());
-        condition.getCode().addCoding().setSystem("defaultICDCode").setCode(preAuth.getIllness().getDefaultICDCode());
-        condition.getCode().addCoding().setSystem("illnessDescription").setCode(preAuth.getIllness().getIllnessDescription());
-        condition.getCode().addCoding().setSystem("relatedDisease").setCode(preAuth.getIllness().getRelatedDisease());
+        condition.getCode().addCoding().setDisplay("illnessName").setCode(preAuth.getIllness().getIllnessName());
+        condition.getCode().addCoding().setDisplay("defaultICDCode").setCode(preAuth.getIllness().getDefaultICDCode());
+        condition.getCode().addCoding().setDisplay("illnessDescription").setCode(preAuth.getIllness().getIllnessDescription());
+        condition.getCode().addCoding().setDisplay("relatedDisease").setCode(preAuth.getIllness().getRelatedDisease());
+
+
+        Device device = new Device();
+        device.setId("Device/1");
 
 
         Procedure procedure = new Procedure();
         procedure.setId("Procedure/1");
-        procedure.addFocalDevice().getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getLeftImplant().toString()).setSystem("LeftImplant");
-        procedure.addFocalDevice().getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getRightImplant().toString()).setSystem("RightImplant");
+        //doubt
+        procedure.setStatus(Procedure.ProcedureStatus.COMPLETED);
+        procedure.setSubject(new Reference("Patient/1"));
+        procedure.addFocalDevice().setManipulated(new Reference("Device/1")).getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getLeftImplant().toString()).setDisplay("LeftImplant");
+        procedure.addFocalDevice().setManipulated(new Reference("Device/1")).getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getRightImplant().toString()).setDisplay("RightImplant");
+
         procedure.addIdentifier().setSystem("procedureId").setValue(preAuth.getProcedureMethod().getProcedureId().toString());
-        procedure.getCode().addCoding().setSystem("procedureMethodName").setCode(preAuth.getProcedureMethod().getProcedureMethodName());
-        procedure.getCode().addCoding().setSystem("procedureMethodDisplayName").setCode(preAuth.getProcedureMethod().getProcedureMethodDisplayName());
-        procedure.getCode().addCoding().setSystem("procedureCode").setCode(preAuth.getProcedureMethod().getProcedureCode());
+        procedure.getCode().addCoding().setDisplay("procedureMethodName").setCode(preAuth.getProcedureMethod().getProcedureMethodName());
+        procedure.getCode().addCoding().setDisplay("procedureMethodDisplayName").setCode(preAuth.getProcedureMethod().getProcedureMethodDisplayName());
+        procedure.getCode().addCoding().setDisplay("procedureCode").setCode(preAuth.getProcedureMethod().getProcedureCode());
         procedure.addNote().setText(preAuth.getProcedure().getDescription());
-        procedure.getCode().addCoding().setSystem("name").setCode(preAuth.getProcedure().getName());
+        procedure.getCode().addCoding().setDisplay("name").setCode(preAuth.getProcedure().getName());
 
 
         Claim claim = new Claim();
@@ -217,25 +226,32 @@ public class ListenerServiceImpl implements ListenerService {
         claim.setMeta(meta);
         claim.addIdentifier().setSystem("claimIllnessTreatmentDetails").setValue(preAuth.getClaimIllnessTreatmentDetails().getClaimId().toString());
         claim.addDiagnosis().getDiagnosisReference().setReference("Condition/1");
-        claim.addSupportingInfo().getCategory().addCoding().setCode(preAuth.getClaim().getPolicyInceptionDate());
-        claim.addSupportingInfo().getTimingDateType().setValue(new Date(preAuth.getClaim().getPolicyInceptionDate()));
-        claim.addSupportingInfo().getCategory().addCoding().setSystem("INF");
-        claim.addSupportingInfo().getCode().addCoding().setSystem("INF-1");
+        //doubt
+        claim.addSupportingInfo().setSequence(1).getCategory().addCoding().setCode(preAuth.getClaim().getPolicyInceptionDate());
+        claim.addSupportingInfo().setSequence(1).getTimingDateType().setValue(new Date(preAuth.getClaim().getPolicyInceptionDate()));
+        claim.addSupportingInfo().setSequence(1).getCategory().addCoding().setSystem("INF");
+        claim.addSupportingInfo().setSequence(1).getCode().addCoding().setSystem("INF-1");
+
         claim.addProcedure().getProcedureReference().setReference("Procedure/1");
         claim.addCareTeam().getProvider().setReference("Practioner/2");
+
+        // doubt
+        claim.getType().setText("claim");
+        claim.getPriority().setText("claim");
+
         //67
 
         //claim admission details
         claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode("ONS-1").setDisplay(preAuth.getClaimAdmissionDetails().getAdmissionDate());
         claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode("ONS-2").setDisplay(preAuth.getClaimAdmissionDetails().getDischargeDate());
-        claim.addItem().addDetail().getCategory().addCoding().setCode(preAuth.getClaimAdmissionDetails().getRoomType()).setSystem("roomType");
-        claim.addItem().addDetail().getProductOrService().addCoding().setSystem("roomType").setCode(preAuth.getClaimAdmissionDetails().getRoomType());
+        claim.addItem().addDetail().getCategory().addCoding().setCode(preAuth.getClaimAdmissionDetails().getRoomType()).setDisplay("roomType");
+        claim.addItem().addDetail().getProductOrService().addCoding().setDisplay("roomType").setCode(preAuth.getClaimAdmissionDetails().getRoomType());
         //76
 
         //document master list
         claim.addItem().addDetail().getNet().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
-        claim.addItem().addDetail().getQuantity().setValue(Double.valueOf(preAuth.getClaimAdmissionDetails().getCostEstimation()));
-        claim.addItem().addDetail().getCategory().addCoding().setSystem("costEstimation").setCode(preAuth.getClaimAdmissionDetails().getCostEstimation());
+        claim.addItem().addDetail().getQuantity().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
+        claim.addItem().addDetail().getCategory().addCoding().setDisplay("costEstimation").setCode(preAuth.getClaimAdmissionDetails().getCostEstimation());
         claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode(String.valueOf(preAuth.getClaimAdmissionDetails().isIcuStay()));
         claim.addSupportingInfo().getCategory().addCoding().setSystem("ONS").setCode("ONS-6").setDisplay(preAuth.getClaimAdmissionDetails().getIcuStayDuration().toString());
         claim.addSupportingInfo().getCategory().addCoding().setSystem("ATT").setCode(preAuth.getDocumentMasterList().get(0).getDocumentType());
@@ -245,7 +261,7 @@ public class ListenerServiceImpl implements ListenerService {
 
 
         // hospitalServiceType completed
-        claim.addItem().addDetail().getCategory().addCoding().setSystem("roomType").setCode(preAuth.getHospitalServiceType().getRoomType());
+        claim.addItem().addDetail().getCategory().addCoding().setDisplay("roomType").setCode(preAuth.getHospitalServiceType().getRoomType());
         claim.addItem().getUnitPrice().setCurrency("Rs").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
         //procedure method code completed
         //document master list completed
