@@ -129,10 +129,13 @@ public class ListenerServiceImpl implements ListenerService {
     public boolean hcxGenerateResponse(MessageResDTO msg) throws Exception {
         return false;
     }
-
+    public int setSequence(int seq){
+        seq = 1;
+        return seq;
+    }
     @Override
     public String buildClaimFhirProfile(PreAuthRequest preAuthRequest) {
-        int insuranceSeq =0,diagnosisSeq =0,procedureSeq = 0 ,supportingInfoSeq =0 ,itemSeq =0,careSeq =0,detailSeq = 0;
+        int insuranceSeq =1,diagnosisSeq =1,procedureSeq = 1 ,supportingInfoSeq =1 ,itemSeq =1,careSeq =1,detailSeq = 1;
         PreAuthDetails preAuth = preAuthRequest.getPreAuthReq();
 
 
@@ -230,36 +233,29 @@ public class ListenerServiceImpl implements ListenerService {
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept().setText(preAuth.getClaim().getPolicyInceptionDate())).getTimingDateType().setValue(new Date(preAuth.getClaim().getPolicyInceptionDate()));
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setCode(preAuth.getClaim().getPreExistingDesease()).setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaim().getPreExistingDesease()))).setValue(new StringType(preAuth.getClaim().getPreExistingDesease()));
 
-        //47
-
         claim.addProcedure().setSequence(procedureSeq++).getProcedureReference().setReference("Procedure/1");
         claim.addCareTeam().setSequence(careSeq++).getProvider().setReference("Practitioner/2");
 
-        // doubt
-        claim.getType().setText("claim");
-        claim.getPriority().setText("claim");
-
-        //67
-
         //claim admission details
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(preAuth.getClaimAdmissionDetails().getAdmissionDate()))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaimAdmissionDetails().getAdmissionDate()))).getTimingDateType().setValueAsString(preAuth.getClaimAdmissionDetails().getAdmissionDate());
 
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(preAuth.getClaimAdmissionDetails().getDischargeDate()))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaimAdmissionDetails().getDischargeDate()))).getTimingDateType().setValueAsString(preAuth.getClaimAdmissionDetails().getDischargeDate());
+        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(preAuth.getClaimAdmissionDetails().getAdmissionDate()))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaimAdmissionDetails().getAdmissionDate()))).getTimingDateType().setValue(new Date(preAuth.getClaimAdmissionDetails().getAdmissionDate()));
 
-        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(detailSeq++).setProductOrService(new CodeableConcept().setText("roomType")).getCategory().addCoding().setCode(preAuth.getClaimAdmissionDetails().getRoomType()).setDisplay("roomType");
+        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(preAuth.getClaimAdmissionDetails().getDischargeDate()))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaimAdmissionDetails().getDischargeDate()))).getTimingDateType().setValue(new Date(preAuth.getClaimAdmissionDetails().getDischargeDate()));
 
-        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(detailSeq++).setProductOrService(new CodeableConcept().setText("roomType")).getProductOrService().addCoding().setDisplay("roomType").setCode(preAuth.getClaimAdmissionDetails().getRoomType());
+        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("roomType")).getCategory().addCoding().setCode(preAuth.getClaimAdmissionDetails().getRoomType()).setDisplay("roomType");
 
-        claim.addItem().setSequence(itemSeq++).setServiced(new IntegerType(preAuth.getClaimAdmissionDetails().getStayDuration()));
+        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("roomType")).getProductOrService().addCoding().setDisplay("roomType").setCode(preAuth.getClaimAdmissionDetails().getRoomType());
 
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(preAuth.getClaimAdmissionDetails().getIcuStayDuration().toString()))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaimAdmissionDetails().getIcuStayDuration().toString()))).setTiming(new StringType(preAuth.getClaimAdmissionDetails().getIcuStayDuration().toString()));
+        //claim.addItem().setSequence(itemSeq++).setServiced(new DateType(preAuth.getClaimAdmissionDetails().getStayDuration()));
+
+        //claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(preAuth.getClaimAdmissionDetails().getIcuStayDuration().toString()))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaimAdmissionDetails().getIcuStayDuration().toString()))).getTimingDateType().setValueAsString(preAuth.getClaimAdmissionDetails().getIcuStayDuration().toString());
 
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(String.valueOf(preAuth.getClaimAdmissionDetails().isIcuStay())))).setValue(new BooleanType(preAuth.getClaimAdmissionDetails().isIcuStay()));
 
         //document master list
-        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(detailSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).getNet().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
-        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(detailSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).getQuantity().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
-        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(detailSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).getCategory().addCoding().setDisplay("costEstimation").setCode(preAuth.getClaimAdmissionDetails().getCostEstimation());
+        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("CostEstimation")).getNet().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
+        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("CostEstimation")).getQuantity().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
+        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("CostEstimation")).getCategory().addCoding().setDisplay("costEstimation").setCode(preAuth.getClaimAdmissionDetails().getCostEstimation());
 
         for(DocumentMaster doc : preAuth.getDocumentMasterList()){
             claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(doc.getDocumentType()))).setValue(new StringType(doc.getDocumentType()));
@@ -269,7 +265,7 @@ public class ListenerServiceImpl implements ListenerService {
         }
 
         // hospitalServiceType completed
-        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(detailSeq++).setProductOrService(new CodeableConcept().setText("roomType")).getCategory().addCoding().setDisplay("roomType").setCode(preAuth.getHospitalServiceType().getRoomType());
+        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("roomType")).getCategory().addCoding().setDisplay("roomType").setCode(preAuth.getHospitalServiceType().getRoomType());
 
         claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("roomTariffPerDay")).getUnitPrice().setCurrency("INR").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
 
