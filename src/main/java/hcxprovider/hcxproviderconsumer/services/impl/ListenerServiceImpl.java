@@ -144,8 +144,7 @@ public class ListenerServiceImpl implements ListenerService {
         Organization organization = new Organization();
         organization.setId("Organization/1");
         organization.addIdentifier().setValue(preAuth.getClaim().getHospitalId().toString()).setSystem("http://abdm.gov.in/facilities");
-
-        // organization.addContact().setPurpose(preAuth.getClaim().getCityName());26
+        organization.addContact().getPurpose().addCoding().setCode(preAuth.getClaim().getCityName()).setDisplay("cityName");
 
         Organization organizationInsurer = new Organization();
         organizationInsurer.setId("Organization/2");
@@ -157,9 +156,9 @@ public class ListenerServiceImpl implements ListenerService {
         patient.setBirthDate(new Date(preAuth.getClaim().getDob()));
         patient.getGenderElement().setValue(AdministrativeGender.valueOf(preAuth.getClaim().getGender()));
         patient.addName().addGiven(preAuth.getClaim().getPatientName());
-        patient.addTelecom().setValue(preAuth.getClaim().getPatient_mobile_no());
-//        patient.addContact().addTelecom().setSystem(ContactPointSystem.PHONE).setValue(preAuth.getClaim().getAttendent_mobile_no());
-//        patient.addContact().addTelecom().setSystem(ContactPointSystem.EMAIL).setValue(preAuth.getClaim().getPatient_email_id());
+        patient.addTelecom().setValue(preAuth.getClaim().getPatient_mobile_no()).setSystem(ContactPointSystem.PHONE);
+        patient.addContact().addTelecom().setSystem(ContactPointSystem.PHONE).setValue(preAuth.getClaim().getAttendent_mobile_no());
+        patient.addContact().addTelecom().setSystem(ContactPointSystem.EMAIL).setValue(preAuth.getClaim().getPatient_email_id());
         //47
 
         Coverage insuranceCoverage = new Coverage();
@@ -167,8 +166,8 @@ public class ListenerServiceImpl implements ListenerService {
         insuranceCoverage.setSubscriberId(preAuth.getClaim().getMedicalCardId());
         insuranceCoverage.setPolicyHolder(new Reference("Patient/1"));
         insuranceCoverage.addIdentifier().setValue(preAuth.getClaim().getPolicyNumber()).setSystem("https://www.gicofIndia.in/policies");
-        // coverage.setType() 23
-        //25
+        insuranceCoverage.getType().addCoding().setCode(preAuth.getClaim().getPolicyType()).setDisplay("policyType");
+
         insuranceCoverage.getPeriod().setEnd(new Date(preAuth.getClaim().getPolicyEndDate()));
         insuranceCoverage.getPeriod().setStart(new Date(preAuth.getClaim().getPolicyStartDate()));
 
@@ -198,12 +197,10 @@ public class ListenerServiceImpl implements ListenerService {
 
         Procedure procedure = new Procedure();
         procedure.setId("Procedure/1");
-        //doubt
         procedure.setStatus(Procedure.ProcedureStatus.COMPLETED);
         procedure.setSubject(new Reference("Patient/1"));
         procedure.addFocalDevice().setManipulated(new Reference("Device/1")).getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getLeftImplant().toString()).setDisplay("LeftImplant");
         procedure.addFocalDevice().setManipulated(new Reference("Device/1")).getAction().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getRightImplant().toString()).setDisplay("RightImplant");
-
         procedure.addIdentifier().setSystem("https://www.gicofIndia.in/policies").setValue(preAuth.getProcedureMethod().getProcedureId().toString());
         procedure.getCode().addCoding().setDisplay("procedureMethodName").setCode(preAuth.getProcedureMethod().getProcedureMethodName());
         procedure.getCode().addCoding().setDisplay("procedureMethodDisplayName").setCode(preAuth.getProcedureMethod().getProcedureMethodDisplayName());
@@ -218,7 +215,7 @@ public class ListenerServiceImpl implements ListenerService {
         claim.addIdentifier().setSystem("https://www.tmh.in/hcx-documents").setValue(preAuth.getClaim().getId().toString());
         claim.setEnterer(new Reference("Practitioner/1"));
         claim.setCreated(new Date(preAuth.getClaim().getCreatedDate()));
-        claim.setStatus(Claim.ClaimStatus.CANCELLED);
+        claim.setStatus(Claim.ClaimStatus.ACTIVE);
         claim.setProvider(new Reference("Organization/1"));
         claim.setPatient(new Reference("Patient/1"));
         claim.setInsurer(new Reference("Organization/2"));
@@ -226,7 +223,6 @@ public class ListenerServiceImpl implements ListenerService {
         claim.setMeta(meta);
         claim.addIdentifier().setSystem("https://www.gicofIndia.in/policies").setValue(preAuth.getClaimIllnessTreatmentDetails().getClaimId().toString());
         claim.addDiagnosis().setSequence(1).getDiagnosisReference().setReference("Condition/1");
-        //doubt
         claim.addSupportingInfo().setSequence(1).getCategory().addCoding().setCode(preAuth.getClaim().getPolicyInceptionDate());
         claim.addSupportingInfo().setSequence(2).setCategory(new CodeableConcept().setText(preAuth.getClaim().getPolicyInceptionDate())).getTimingDateType().setValue(new Date(preAuth.getClaim().getPolicyInceptionDate()));
         //47
@@ -241,8 +237,8 @@ public class ListenerServiceImpl implements ListenerService {
         //67
 
         //claim admission details
-//        claim.addSupportingInfo().setSequence(5).getCategory().addCoding().setSystem("ONS").setCode("ONS-1").setDisplay(preAuth.getClaimAdmissionDetails().getAdmissionDate());
-//        claim.addSupportingInfo().setSequence(6).getCategory().addCoding().setSystem("ONS").setCode("ONS-2").setDisplay(preAuth.getClaimAdmissionDetails().getDischargeDate());
+        //claim.addSupportingInfo().setSequence(5).getCategory().addCoding().setSystem("ONS").setCode("ONS-1").setDisplay(preAuth.getClaimAdmissionDetails().getAdmissionDate());
+        //claim.addSupportingInfo().setSequence(6).getCategory().addCoding().setSystem("ONS").setCode("ONS-2").setDisplay(preAuth.getClaimAdmissionDetails().getDischargeDate());
         claim.addItem().setSequence(1).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(1).setProductOrService(new CodeableConcept().setText("roomType")).getCategory().addCoding().setCode(preAuth.getClaimAdmissionDetails().getRoomType()).setDisplay("roomType");
         claim.addItem().setSequence(2).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(2).setProductOrService(new CodeableConcept().setText("roomType")).getProductOrService().addCoding().setDisplay("roomType").setCode(preAuth.getClaimAdmissionDetails().getRoomType());
         //76
@@ -261,15 +257,14 @@ public class ListenerServiceImpl implements ListenerService {
 
         // hospitalServiceType completed
         claim.addItem().setSequence(6).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(6).setProductOrService(new CodeableConcept().setText("roomType")).getCategory().addCoding().setDisplay("roomType").setCode(preAuth.getHospitalServiceType().getRoomType());
-        claim.addItem().setSequence(7).setProductOrService(new CodeableConcept().setText("roomTariffPerDay")).getUnitPrice().setCurrency("INR").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
+        //claim.addItem().setSequence(7).setProductOrService(new CodeableConcept().setText("roomTariffPerDay")).getUnitPrice().setCurrency("INR").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
 
 
         //37(3rd)
         Composition composition = new Composition();
         composition.setId("composition/" + UUID.randomUUID().toString());
         composition.setStatus(Composition.CompositionStatus.FINAL);
-        composition.getType().addCoding().setSystem("https://www.hcx.org/document-type");
-        composition.getType().addCoding().setCode("HcxClaimRequest");
+        composition.getType().addCoding().setSystem("https://www.hcx.org/document-type").setCode("HcxClaimRequest");
         composition.addAuthor().setReference("Organization/1");
         composition.setDate(new Date());
         composition.setTitle("Claim Request");
