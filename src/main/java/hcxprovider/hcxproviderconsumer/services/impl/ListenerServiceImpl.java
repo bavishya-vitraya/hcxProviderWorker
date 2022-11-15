@@ -257,7 +257,7 @@ public class ListenerServiceImpl implements ListenerService {
 
         // hospitalServiceType completed
         claim.addItem().setSequence(6).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(6).setProductOrService(new CodeableConcept().setText("roomType")).getCategory().addCoding().setDisplay("roomType").setCode(preAuth.getHospitalServiceType().getRoomType());
-        //claim.addItem().setSequence(7).setProductOrService(new CodeableConcept().setText("roomTariffPerDay")).getUnitPrice().setCurrency("INR").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
+        claim.addItem().setSequence(7).setProductOrService(new CodeableConcept().setText("roomTariffPerDay")).getUnitPrice().setCurrency("INR").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
 
 
         //37(3rd)
