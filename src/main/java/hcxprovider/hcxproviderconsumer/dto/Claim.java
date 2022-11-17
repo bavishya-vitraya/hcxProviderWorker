@@ -1,58 +1,44 @@
 package hcxprovider.hcxproviderconsumer.dto;
 
+import hcxprovider.hcxproviderconsumer.enums.PolicyType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class Claim {
-
-    private Integer id;
-    private Integer creatorId;
-    private String createdDate;
+    private Long id;
+    private Long creatorId;
+    private Date createdDate;
     private boolean deleted;
-    private Integer hospitalId;
+    private int hospitalId;
     private String hospitalPatientId;
-    private Integer insuranceAgencyId;
-    private String updatedDate;
-    private Integer state;
+    private int insuranceAgencyId;
+    private Date updatedDate;
+    private String intimationNumber;
+    private int state;
     private String status;
-    private Integer age;
-    private String dob;
+    private int age;
+    private Date dob;
     private String gender;
     private String medicalCardId;
     private String patientName;
     private String policyHolderName;
     private String policyNumber;
-    private String policyType;
-    private boolean validated;
-    private String policyInceptionDate;
+    private PolicyType policyType;
+    private Date policyInceptionDate;
     private String cityName;
-    private Integer coPayPercentage;
-    private String policyEndDate;
+    private Date policyEndDate;
     private String policyName;
     private String productCode;
-    private String policyStartDate;
-    private BigDecimal sumInsured;
-    private BigDecimal availableSumInsured;
-    private Integer cumulativeBonus;
-    private Integer authorisedAmount;
-    private String premiumPaymentZone;
-    private String preExistingDesease;
-    private Integer medicalEventId;
-    private String metadata;
-    private String automaticRestoration;
-    private String superRestoration;
-    private Integer rechargeBenefitAmount;
-    private Integer superRestorationBenefitAmount;
+    private Date policyStartDate;
+    private int medicalEventId;
     private String patient_mobile_no;
     private String attendent_mobile_no;
     private String patient_email_id;
-    private String ped_list;
-    private boolean isSTPClaimReview;
-    private boolean sendToManual;
 }

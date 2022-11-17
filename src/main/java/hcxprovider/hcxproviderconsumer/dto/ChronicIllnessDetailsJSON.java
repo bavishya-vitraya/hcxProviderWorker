@@ -10,5 +10,5 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ChronicIllnessDetailsJSON {
-    private List<String> chronicIllnessList;
+    private List<ChronicIllnessDTO> chronicIllnessList;
 }

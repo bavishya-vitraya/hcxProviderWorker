@@ -1,5 +1,6 @@
 package hcxprovider.hcxproviderconsumer.dto;
 
+import hcxprovider.hcxproviderconsumer.enums.ClaimFlowType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,8 +11,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PreAuthDetails {
-    private String claimFlowType;
-    private Integer serviceTypeId;
+    private ClaimFlowType claimFlowType;
+    private int serviceTypeId;
     private Claim claim;
     private ClaimIllnessTreatmentDetails claimIllnessTreatmentDetails;
     private ClaimAdmissionDetails claimAdmissionDetails;

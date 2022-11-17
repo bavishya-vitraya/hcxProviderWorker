@@ -5,24 +5,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ClaimAdmissionDetails {
-    private Integer id;
-    private Integer claimId;
-    private String admissionDate;
-    private String dischargeDate;
+    private long claimId;
+    private Date admissionDate;
+    private Date dischargeDate;
     private String roomType;
-    private Integer hospitalServiceTypeId;
-    private Integer stayDuration;
+    private int hospitalServiceTypeId;
+    private int stayDuration;
     private String costEstimation;
-    private boolean isPackage;
     private BigDecimal packageAmount;
     private boolean icuStay;
-    private Integer icuStayDuration;
-    private Integer icuServiceTypeId;
-    private String createTime;
-    private String updateTime;
+    private int icuStayDuration;
+    private int icuServiceTypeId;
 }

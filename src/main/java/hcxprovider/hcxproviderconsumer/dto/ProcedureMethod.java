@@ -5,19 +5,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProcedureMethod {
-    private BigDecimal id;
-    private Integer procedureId;
+    private int id;
+    private int procedureId;
     private String procedureMethodName;
     private String procedureMethodDisplayName;
     private String procedureCode;
     private String procedureNameInsurer;
     private boolean enabled;
-    private String createTime;
-    private String updateTime;
+    private Date createTime;
+    private Date updateTime;
     private String procedureMethodCode;
 }

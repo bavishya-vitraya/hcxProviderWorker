@@ -4,24 +4,20 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ClaimIllnessTreatmentDetails {
-    private Integer id;
-    private Integer claimId;
-    private Integer illnessId;
+    private long claimId;
     private String chronicIllnessDetails;
-    private Integer treatmentId;
-    private Integer procedureDepartmentId;
-    private Integer procedureCorporateMappingId;
-    private Integer procedureId;
+    private long procedureCorporateMappingId;
+    private long procedureId;
     private String lineOfTreatmentDetails;
     private Integer leftImplant;
     private Integer rightImplant;
-    private String dateOfDiagnosis;
-    private String createTime;
-    private String updateTime;
+    private Date dateOfDiagnosis;
     private String doctorsDetails;
     private ChronicIllnessDetailsJSON chronicIllnessDetailsJSON;
 }
