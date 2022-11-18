@@ -2,13 +2,9 @@ package hcxprovider.hcxproviderconsumer.services.impl;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
-import ca.uhn.fhir.rest.client.api.IGenericClient;
-import ca.uhn.fhir.util.BundleBuilder;
-import hcxprovider.hcxproviderconsumer.dto.DocumentMaster;
-import hcxprovider.hcxproviderconsumer.dto.Message;
-import hcxprovider.hcxproviderconsumer.dto.MessageResDTO;
-import hcxprovider.hcxproviderconsumer.dto.PreAuthDetails;
-import hcxprovider.hcxproviderconsumer.enums.PolicyType;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import hcxprovider.hcxproviderconsumer.dto.*;
 import hcxprovider.hcxproviderconsumer.model.ClaimRequest;
 import hcxprovider.hcxproviderconsumer.model.CoverageEligibilityRequest;
 import hcxprovider.hcxproviderconsumer.model.PreAuthRequest;
@@ -23,14 +19,13 @@ import io.hcxprotocol.init.HCXIntegrator;
 import io.hcxprotocol.utils.Operations;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.hl7.fhir.instance.model.api.IBase;
-import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Claim;
 import org.hl7.fhir.r4.model.ContactPoint.ContactPointSystem;
 import org.hl7.fhir.r4.model.Enumerations.AdministrativeGender;
+import org.hl7.fhir.r4.model.Procedure;
 import org.hl7.fhir.r4.model.codesystems.ClaimType;
 import org.hl7.fhir.r4.model.codesystems.ProcessPriority;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
@@ -138,13 +133,18 @@ public class ListenerServiceImpl implements ListenerService {
     public String buildClaimFhirProfile(PreAuthRequest preAuthRequest) {
         int insuranceSeq = 1, diagnosisSeq = 1, procedureSeq = 1, supportingInfoSeq = 1, itemSeq = 1, careSeq = 1, detailSeq = 1;
         PreAuthDetails preAuth = preAuthRequest.getPreAuthReq();
+        AttachmentDTO attachmentDTO = new AttachmentDTO();
 
 
         Practitioner practitioner = new Practitioner();
         practitioner.setId("Practitioner/1");
         practitioner.addIdentifier().setValue(preAuth.getClaim().getCreatorId().toString()).setSystem("http://www.acme.com/identifiers/patient");
-        practitioner.addName().addGiven(preAuth.getClaimIllnessTreatmentDetails().getDoctorsDetails());
-        practitioner.addQualification().getCode().addCoding().setCode(preAuth.getClaimIllnessTreatmentDetails().getDoctorsDetails());
+        List<DoctorDetailsDto> doctorDetailsDtoList = new Gson().fromJson(preAuth.getClaimIllnessTreatmentDetails().getDoctorsDetails(), new TypeToken<List<DoctorDetailsDto>>() {
+        }.getType());
+        for (DoctorDetailsDto doctor : doctorDetailsDtoList) {
+            practitioner.addName().addGiven(doctor.getDoctorName());
+            practitioner.addQualification().getCode().addCoding().setCode(doctor.getQualification());
+        }
 
         Organization organization = new Organization();
         organization.setId("Organization/1");
@@ -181,10 +181,18 @@ public class ListenerServiceImpl implements ListenerService {
         Condition condition = new Condition();
         condition.setId("Condition/1");
         condition.setSubject(new Reference("Patient/1"));
-        condition.getCode().addCoding().setDisplay("ChronicIllnessDetails").setCode(preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetails());
         condition.setRecordedDate(preAuth.getClaimIllnessTreatmentDetails().getDateOfDiagnosis());
         condition.getCode().addCoding().setDisplay("illnessName").setCode(preAuth.getIllness().getIllnessName());
         condition.getCode().addCoding().setDisplay("defaultICDCode").setCode(preAuth.getIllness().getDefaultICDCode());
+
+        List<ChronicIllnessDTO> chronicIllnessDTOList = preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetailsJSON().getChronicIllnessList();
+        for (ChronicIllnessDTO chronicIllness : chronicIllnessDTOList) {
+            condition.addIdentifier().setValue(String.valueOf(chronicIllness.getIllnessId()));
+            condition.setRecordedDate(chronicIllness.getDiagnosisDate());
+            condition.getCode().addCoding().setDisplay("illnessName").setCode(chronicIllness.getIllnessName());
+            condition.getCode().addCoding().setDisplay("illnessICDCode").setCode(chronicIllness.getIllnessIcdCode());
+            // condition.se age
+        }
 
 
         Device device = new Device();
@@ -228,10 +236,6 @@ public class ListenerServiceImpl implements ListenerService {
 
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(preAuth.getClaimAdmissionDetails().getDischargeDate().toString()))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaimAdmissionDetails().getDischargeDate().toString()))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getDischargeDate());
         claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("roomType")).getProductOrService().addCoding().setDisplay("roomType").setCode(preAuth.getClaimAdmissionDetails().getRoomType());
-
-        //claim.addItem().setServiced(new IntegerType(preAuth.getClaimAdmissionDetails().getStayDuration()));
-        //claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(String.valueOf(preAuth.getClaimAdmissionDetails().getIcuStayDuration())))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(String.valueOf(preAuth.getClaimAdmissionDetails().getIcuStayDuration())))).getTimingDateType().setValueAsString(String.valueOf(preAuth.getClaimAdmissionDetails().getIcuStayDuration()));
-
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(String.valueOf(preAuth.getClaimAdmissionDetails().isIcuStay())))).setValue(new BooleanType(preAuth.getClaimAdmissionDetails().isIcuStay()));
 
         //document master list
@@ -247,6 +251,7 @@ public class ListenerServiceImpl implements ListenerService {
             claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(doc.getNote()))).setValue(new StringType(doc.getNote()));
             // claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(String.valueOf(doc.getDocumentStatus())))).setValue(new IntegerType(doc.getDocumentStatus()));
             claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(String.valueOf(doc.isFileSupported())))).setValue(new BooleanType(doc.isFileSupported()));
+            attachmentDTO.setParentTableId(doc.getParentTableId());
         }
 
         // hospitalServiceType completed
@@ -257,6 +262,35 @@ public class ListenerServiceImpl implements ListenerService {
         claim.setType(new CodeableConcept(new Coding().setCode(ClaimType.INSTITUTIONAL.toCode()).setSystem("http://terminology.hl7.org/CodeSystem/claim-type")));
 
         claim.setPriority(new CodeableConcept(new Coding().setSystem("http://terminology.hl7.org/CodeSystem/processpriority").setCode(ProcessPriority.NORMAL.toCode())));
+
+
+        //Attachment
+        attachmentDTO.setServiceTypeId(preAuth.getServiceTypeId());
+        attachmentDTO.setDeleted(preAuth.getClaim().isDeleted());
+        attachmentDTO.setUpdatedDate(preAuth.getClaim().getUpdatedDate());
+        attachmentDTO.setState(preAuth.getClaim().getState());
+        attachmentDTO.setStatus(preAuth.getClaim().getStatus());
+        attachmentDTO.setAge(preAuth.getClaim().getAge());
+        attachmentDTO.setProductCode(preAuth.getClaim().getProductCode());
+        attachmentDTO.setMedicalEventId(preAuth.getClaim().getMedicalEventId());
+        attachmentDTO.setProcedureCorporateMappingId(preAuth.getClaimIllnessTreatmentDetails().getProcedureCorporateMappingId());
+        attachmentDTO.setProcedureId(preAuth.getClaimIllnessTreatmentDetails().getProcedureId());
+        attachmentDTO.setLeftImplant(preAuth.getClaimIllnessTreatmentDetails().getLeftImplant());
+        attachmentDTO.setRightImplant(preAuth.getClaimIllnessTreatmentDetails().getRightImplant());
+        attachmentDTO.setHospitalServiceTypeId(preAuth.getClaimAdmissionDetails().getHospitalServiceTypeId());
+        attachmentDTO.setStayDuration(preAuth.getClaimAdmissionDetails().getStayDuration());
+        attachmentDTO.setCostEstimation(preAuth.getClaimAdmissionDetails().getCostEstimation());
+        attachmentDTO.setPackageAmount(preAuth.getClaimAdmissionDetails().getPackageAmount());
+        attachmentDTO.setIcuStayDuration(preAuth.getClaimAdmissionDetails().getIcuStayDuration());
+        attachmentDTO.setIcuServiceTypeId(preAuth.getClaimAdmissionDetails().getIcuServiceTypeId());
+        attachmentDTO.setVitrayaRoomCategory(String.valueOf(preAuth.getHospitalServiceType().getVitrayaRoomCategory()));
+        attachmentDTO.setInsurerRoomType(preAuth.getHospitalServiceType().getInsurerRoomType());
+        attachmentDTO.setSinglePrivateAC(preAuth.getHospitalServiceType().isSinglePrivateAC());
+        attachmentDTO.setServiceType(preAuth.getHospitalServiceType().getServiceType());
+        attachmentDTO.setIllnessCategoryId(preAuth.getIllness().getIllnessCategoryId());
+
+        claim.addSupportingInfo().setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories"))).setSequence(supportingInfoSeq++).setValue(new Attachment().setData(attachmentDTO.toString().getBytes()).setContentType("attachment.json"));
+
         Composition composition = new Composition();
         composition.setId("composition/" + UUID.randomUUID().toString());
         composition.setStatus(Composition.CompositionStatus.FINAL);
