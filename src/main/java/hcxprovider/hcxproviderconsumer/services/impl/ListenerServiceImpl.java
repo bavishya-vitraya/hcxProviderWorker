@@ -137,6 +137,9 @@ public class ListenerServiceImpl implements ListenerService {
             vhiResponse = preAuthResponseRepo.findPreAuthResponseById(msg.getReferenceId());
             log.info("PreAuthResponse:{}", vhiResponse);
             PreAuthVhiResponse preAuthVhiResponse = buildVhiClaimProfile(vhiResponse.getFhirPayload());
+            vhiResponse.setPreAuthResponse(preAuthVhiResponse);
+            preAuthResponseRepo.save(vhiResponse);
+
         }
        return true;
     }
@@ -148,14 +151,22 @@ public class ListenerServiceImpl implements ListenerService {
         for(Bundle.BundleEntryComponent entryComponent: bundle.getEntry()){
             String resourceType = entryComponent.getResource().getResourceType().toString();
             log.info(String.valueOf(entryComponent.getResource().getResourceType()));
-            if(resourceType.equalsIgnoreCase(Constants.CLAIM_RESPONSE_RESOURCE)){
-                 claimResponse = (ClaimResponse) entryComponent.getResource();
+            if(resourceType.equalsIgnoreCase(Constants.CLAIM_RESPONSE_RESOURCE)) {
+                claimResponse = (ClaimResponse) entryComponent.getResource();
+                result.setClaimNumber(claimResponse.getPreAuthRef());
+                result.setClaimStatusInString(claimResponse.getDisposition());
+                result.setQuery(claimResponse.getProcessNote().get(0).getText());
+                result.setApprovedAmount(claimResponse.getTotal().get(0).getAmount().getValue());
+                if (claimResponse.getOutcome().toString().equalsIgnoreCase("COMPLETE")) {
+                    result.setClaimStatus(PreAuthVhiResponse.AdjudicationClaimStatus.APPROVED);
+                }
+
             }
-            log.info("Entry component {}",entryComponent);
 
         }
-        log.info("Parsed Claim Response from Fhir:, {}",claimResponse.getIdentifier()+claimResponse.getDisposition());
-        return null;
+        log.info("vhi result{}", result);
+        log.info("Parsed Claim Response from Fhir:, {}", claimResponse.getDisposition());
+        return result;
     }
     public int setSequence(int seq){
         seq = 1;
@@ -283,7 +294,7 @@ public class ListenerServiceImpl implements ListenerService {
             claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(doc.getNote()))).setValue(new StringType(doc.getNote()));
             // claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(String.valueOf(doc.getDocumentStatus())))).setValue(new IntegerType(doc.getDocumentStatus()));
             claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(String.valueOf(doc.isFileSupported())))).setValue(new BooleanType(doc.isFileSupported()));
-            attachmentDTO.setParentTableId(doc.getParentTableId());
+
         }
 
         // hospitalServiceType completed
@@ -319,9 +330,11 @@ public class ListenerServiceImpl implements ListenerService {
         attachmentDTO.setInsurerRoomType(preAuth.getHospitalServiceType().getInsurerRoomType());
         attachmentDTO.setSinglePrivateAC(preAuth.getHospitalServiceType().isSinglePrivateAC());
         attachmentDTO.setServiceType(preAuth.getHospitalServiceType().getServiceType());
+        attachmentDTO.setParentTableId(preAuth.getClaim().getId());
         attachmentDTO.setIllnessCategoryId(preAuth.getIllness().getIllnessCategoryId());
 
-        claim.addSupportingInfo().setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories"))).setSequence(supportingInfoSeq++).setValue(new Attachment().setData(attachmentDTO.toString().getBytes()).setContentType("attachment.json"));
+        String encodedAttachement = Base64.getUrlEncoder().encodeToString(attachmentDTO.toString().getBytes());
+        claim.addSupportingInfo().setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories"))).setSequence(supportingInfoSeq++).setValue(new StringType(encodedAttachement));
 
         Composition composition = new Composition();
         composition.setId("composition/" + UUID.randomUUID().toString());

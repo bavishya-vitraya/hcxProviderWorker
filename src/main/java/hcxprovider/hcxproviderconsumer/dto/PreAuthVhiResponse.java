@@ -15,19 +15,10 @@ public class PreAuthVhiResponse {
 
     private String claimNumber;
     private AdjudicationClaimStatus claimStatus;
-    private AdjudicationStatus adjudicationStatus;
     private String claimStatusInString;
-    private ClaimAdjudicationData adjudicationData;
     private String query;
     private List<GalaxyFile> files;
     private BigDecimal approvedAmount;
-
-    public enum AdjudicationStatus {
-        AGREE,
-        MODIFY_ADMISSIBILITY,
-        MODIFY_AMOUNT,
-        NA
-    }
 
 
     public enum AdjudicationClaimStatus {
