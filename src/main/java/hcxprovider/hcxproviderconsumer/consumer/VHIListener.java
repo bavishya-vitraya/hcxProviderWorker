@@ -45,8 +45,7 @@ public class VHIListener {
     public void recievedResponse(Message msg) throws Exception {
         try {
             log.info("retrieved message :{}",msg);
-            boolean result = listenerService.hcxGenerateResponse(msg);
-            log.info(String.valueOf(result));
+            listenerService.vhiGenerateResponse(msg);
         }
         catch(Exception exception){
             log.error("Exception :"+exception);

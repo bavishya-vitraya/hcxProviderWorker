@@ -76,6 +76,9 @@ public class ListenerServiceImpl implements ListenerService {
     @Autowired
     PreAuthResponseRepo preAuthResponseRepo;
 
+    FhirContext fhirctx = FhirContext.forR4();
+    IParser parser = fhirctx.newJsonParser().setPrettyPrint(true);
+
     public Map<String, Object> setConfig() throws IOException {
         Map<String, Object> config = new HashMap<>();
         File file = new ClassPathResource("keys/vitraya-mock-provider-private-key.pem").getFile();
@@ -85,19 +88,6 @@ public class ListenerServiceImpl implements ListenerService {
         config.put("participantCode",participantCode);
         config.put("username", username);
         config.put("password",password);
-        config.put("encryptionPrivateKey", privateKey);
-        config.put("igUrl", igUrl);
-        return config;
-    }
-    public Map<String, Object> setPayorConfig() throws IOException {
-        Map<String, Object> config = new HashMap<>();
-        File file = new ClassPathResource("keys/vitraya-mock-payor-private-key.pem").getFile();
-        String privateKey= FileUtils.readFileToString(file);
-        config.put("protocolBasePath", protocolBasePath);
-        config.put("authBasePath", authBasePath);
-        config.put("participantCode","1-434d79f6-aad8-48bc-b408-980a4dbd90e2");
-        config.put("username", "vitrayahcxpayor1@vitrayatech.com");
-        config.put("password","BkYJHwm64EEn8B8");
         config.put("encryptionPrivateKey", privateKey);
         config.put("igUrl", igUrl);
         return config;
@@ -139,26 +129,33 @@ public class ListenerServiceImpl implements ListenerService {
 
 
     @Override
-    public boolean hcxGenerateResponse(Message msg) throws Exception {
-        String payload = null;
+    public boolean vhiGenerateResponse(Message msg) throws Exception {
         String resType = msg.getMessageType();
-        PreAuthResponse preAuthResponse = new PreAuthResponse();
+        PreAuthResponse vhiResponse = new PreAuthResponse();
         Operations operation = null;
         if (resType.equalsIgnoreCase(Constants.PRE_AUTH_RESPONSE)) {
-            preAuthResponse = preAuthResponseRepo.findPreAuthResponseById(msg.getReferenceId());
-            log.info("CoverageEligibility:{}", preAuthResponse);
-            operation = Operations.PRE_AUTH_ON_SUBMIT;
-            payload = buildClaimResponseFhirProfile(preAuthResponse);
+            vhiResponse = preAuthResponseRepo.findPreAuthResponseById(msg.getReferenceId());
+            log.info("PreAuthResponse:{}", vhiResponse);
+            PreAuthVhiResponse preAuthVhiResponse = buildVhiClaimProfile(vhiResponse.getFhirPayload());
         }
-        HCXIntegrator.init(setPayorConfig());
-        Map<String, Object> output = new HashMap<>();
-        HCXOutgoingRequest hcxOutgoingRequest = new HCXOutgoingRequest();
-        File actionJweFile = new ClassPathResource("input/jweResponse").getFile();
-        String actionJwe = FileUtils.readFileToString(actionJweFile);
-        String status = "response.partial";
-        Boolean res = hcxOutgoingRequest.generate(payload,operation,actionJwe,status,output);
-        System.out.println("{}"+res+output);
-        return true;
+       return true;
+    }
+    @Override
+    public PreAuthVhiResponse buildVhiClaimProfile(String fhirPayload) {
+        PreAuthVhiResponse result = new PreAuthVhiResponse();
+        Bundle bundle = parser.parseResource(Bundle.class, fhirPayload);
+        ClaimResponse claimResponse = new ClaimResponse();
+        for(Bundle.BundleEntryComponent entryComponent: bundle.getEntry()){
+            String resourceType = entryComponent.getResource().getResourceType().toString();
+            log.info(String.valueOf(entryComponent.getResource().getResourceType()));
+            if(resourceType.equalsIgnoreCase(Constants.CLAIM_RESPONSE_RESOURCE)){
+                 claimResponse = (ClaimResponse) entryComponent.getResource();
+            }
+            log.info("Entry component {}",entryComponent);
+
+        }
+        log.info("Parsed Claim Response from Fhir:, {}",claimResponse.getIdentifier()+claimResponse.getDisposition());
+        return null;
     }
     public int setSequence(int seq){
         seq = 1;
@@ -335,7 +332,6 @@ public class ListenerServiceImpl implements ListenerService {
         composition.setTitle("Claim Request");
         composition.addSection().addEntry().setReference("Claim/1");
 
-        FhirContext fhirctx = FhirContext.forR4();
         Bundle bundle = new Bundle();
         bundle.setId(UUID.randomUUID().toString());
         bundle.setType(Bundle.BundleType.DOCUMENT);
@@ -350,14 +346,12 @@ public class ListenerServiceImpl implements ListenerService {
         bundle.addEntry().setFullUrl(condition.getId()).setResource(condition);
         bundle.addEntry().setFullUrl(claim.getId()).setResource(claim);
 
-
-        IParser p = fhirctx.newJsonParser().setPrettyPrint(true);
-        String messageString = p.encodeResourceToString(bundle);
+        String messageString = parser.encodeResourceToString(bundle);
         System.out.println("here is the json " + messageString);
         return messageString;
     }
 
-    @Override
+   /* @Override
     public String buildClaimResponseFhirProfile(PreAuthResponse preAuthResponse) {
         PreAuthVhiResponse preAuthVhiResponse = preAuthResponse.getPreAuthResponse();
 
@@ -424,10 +418,5 @@ public class ListenerServiceImpl implements ListenerService {
         String messageString = p.encodeResourceToString(bundle);
         System.out.println("here is the json " + messageString);
         return messageString;
-    }
-
-    @Override
-    public String buildVhiClaimProfile(PreAuthResponse preAuthResponse) {
-        return null;
-    }
+    }*/
 }
