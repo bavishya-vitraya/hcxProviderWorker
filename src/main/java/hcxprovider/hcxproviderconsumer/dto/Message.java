@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Message {
-    private String requestId;
+    private String referenceId;
     private String senderCode;
     private String insurerCode;
-    private String requestType;
+    private String messageType;
 }

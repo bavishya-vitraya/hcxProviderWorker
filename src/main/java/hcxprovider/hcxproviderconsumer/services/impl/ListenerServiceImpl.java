@@ -12,6 +12,7 @@ import hcxprovider.hcxproviderconsumer.model.PreAuthResponse;
 import hcxprovider.hcxproviderconsumer.repository.ClaimRequestRepo;
 import hcxprovider.hcxproviderconsumer.repository.CoverageEligibilityRequestRepo;
 import hcxprovider.hcxproviderconsumer.repository.PreAuthRequestRepo;
+import hcxprovider.hcxproviderconsumer.repository.PreAuthResponseRepo;
 import hcxprovider.hcxproviderconsumer.services.ListenerService;
 import hcxprovider.hcxproviderconsumer.utils.Constants;
 import io.hcxprotocol.impl.HCXOutgoingRequest;
@@ -24,6 +25,7 @@ import org.hl7.fhir.r4.model.Claim;
 import org.hl7.fhir.r4.model.ContactPoint.ContactPointSystem;
 import org.hl7.fhir.r4.model.Enumerations.AdministrativeGender;
 import org.hl7.fhir.r4.model.Procedure;
+import org.hl7.fhir.r4.model.codesystems.Adjudication;
 import org.hl7.fhir.r4.model.codesystems.ClaimType;
 import org.hl7.fhir.r4.model.codesystems.ProcessPriority;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +73,9 @@ public class ListenerServiceImpl implements ListenerService {
     @Autowired
     ClaimRequestRepo claimRequestRepo;
 
+    @Autowired
+    PreAuthResponseRepo preAuthResponseRepo;
+
     public Map<String, Object> setConfig() throws IOException {
         Map<String, Object> config = new HashMap<>();
         File file = new ClassPathResource("keys/vitraya-mock-provider-private-key.pem").getFile();
@@ -84,7 +89,19 @@ public class ListenerServiceImpl implements ListenerService {
         config.put("igUrl", igUrl);
         return config;
     }
-
+    public Map<String, Object> setPayorConfig() throws IOException {
+        Map<String, Object> config = new HashMap<>();
+        File file = new ClassPathResource("keys/vitraya-mock-payor-private-key.pem").getFile();
+        String privateKey= FileUtils.readFileToString(file);
+        config.put("protocolBasePath", protocolBasePath);
+        config.put("authBasePath", authBasePath);
+        config.put("participantCode","1-434d79f6-aad8-48bc-b408-980a4dbd90e2");
+        config.put("username", "vitrayahcxpayor1@vitrayatech.com");
+        config.put("password","BkYJHwm64EEn8B8");
+        config.put("encryptionPrivateKey", privateKey);
+        config.put("igUrl", igUrl);
+        return config;
+    }
     @Override
     public boolean hcxGenerateRequest(Message msg) throws Exception {
 //      File payloadFile = new ClassPathResource("input/claim.txt").getFile();
@@ -93,20 +110,20 @@ public class ListenerServiceImpl implements ListenerService {
         CoverageEligibilityRequest coverageEligibilityRequest = new CoverageEligibilityRequest();
         ClaimRequest claimRequest = new ClaimRequest();
         PreAuthRequest preAuthRequest = new PreAuthRequest();
-        String reqType = msg.getRequestType();
+        String reqType = msg.getMessageType();
 
         Operations operation = null;
         if (reqType.equalsIgnoreCase(Constants.COVERAGE_ELIGIBILITY)) {
-            coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getRequestId());
+            coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getReferenceId());
             log.info("CoverageEligibility:{}", coverageEligibilityRequest);
             operation = Operations.COVERAGE_ELIGIBILITY_CHECK;
         } else if (reqType.equalsIgnoreCase(Constants.CLAIM)) {
-            claimRequest = claimRequestRepo.findClaimRequestById(msg.getRequestId());
+            claimRequest = claimRequestRepo.findClaimRequestById(msg.getReferenceId());
             log.info("ClaimReq:{}", claimRequest);
             operation = Operations.CLAIM_SUBMIT;
             payload = buildClaimFhirProfile(preAuthRequest);
         } else if (reqType.equalsIgnoreCase(Constants.PRE_AUTH)) {
-            preAuthRequest = preAuthRequestRepo.findPreAuthRequestById(msg.getRequestId());
+            preAuthRequest = preAuthRequestRepo.findPreAuthRequestById(msg.getReferenceId());
             log.info("PreAuthReq:{}", preAuthRequest);
             operation = Operations.PRE_AUTH_SUBMIT;
             payload = buildClaimFhirProfile(preAuthRequest);
@@ -122,8 +139,26 @@ public class ListenerServiceImpl implements ListenerService {
 
 
     @Override
-    public boolean hcxGenerateResponse(MessageResDTO msg) throws Exception {
-        return false;
+    public boolean hcxGenerateResponse(Message msg) throws Exception {
+        String payload = null;
+        String resType = msg.getMessageType();
+        PreAuthResponse preAuthResponse = new PreAuthResponse();
+        Operations operation = null;
+        if (resType.equalsIgnoreCase(Constants.PRE_AUTH_RESPONSE)) {
+            preAuthResponse = preAuthResponseRepo.findPreAuthResponseById(msg.getReferenceId());
+            log.info("CoverageEligibility:{}", preAuthResponse);
+            operation = Operations.PRE_AUTH_ON_SUBMIT;
+            payload = buildClaimResponseFhirProfile(preAuthResponse);
+        }
+        HCXIntegrator.init(setPayorConfig());
+        Map<String, Object> output = new HashMap<>();
+        HCXOutgoingRequest hcxOutgoingRequest = new HCXOutgoingRequest();
+        File actionJweFile = new ClassPathResource("input/jweResponse").getFile();
+        String actionJwe = FileUtils.readFileToString(actionJweFile);
+        String status = "response.partial";
+        Boolean res = hcxOutgoingRequest.generate(payload,operation,actionJwe,status,output);
+        System.out.println("{}"+res+output);
+        return true;
     }
     public int setSequence(int seq){
         seq = 1;
@@ -319,7 +354,75 @@ public class ListenerServiceImpl implements ListenerService {
         IParser p = fhirctx.newJsonParser().setPrettyPrint(true);
         String messageString = p.encodeResourceToString(bundle);
         System.out.println("here is the json " + messageString);
-        // log.info("Document bundle: {}", ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(document));
+        return messageString;
+    }
+
+    @Override
+    public String buildClaimResponseFhirProfile(PreAuthResponse preAuthResponse) {
+        PreAuthVhiResponse preAuthVhiResponse = preAuthResponse.getPreAuthResponse();
+
+        Patient patient = new Patient();// should fetch from claim request
+        patient.setId("Patient/1");
+
+        Organization organization = new Organization(); // should fetch from claim request
+        organization.setId("organization/1");
+        organization.setName("Test-HOS01");
+
+        Claim claimRequest = new Claim(); // should fetch from claim request
+        claimRequest.setId("Claim/1");
+        claimRequest.setUse(Claim.Use.PREAUTHORIZATION);
+        claimRequest.setId("Claim/1");
+        claimRequest.setCreated(new Date());
+        claimRequest.setStatus(Claim.ClaimStatus.ACTIVE);
+        claimRequest.setType(new CodeableConcept(new Coding().setCode(ClaimType.INSTITUTIONAL.toCode()).setSystem("http://terminology.hl7.org/CodeSystem/claim-type")));
+        claimRequest.setPriority(new CodeableConcept(new Coding().setSystem("http://terminology.hl7.org/CodeSystem/processpriority").setCode(ProcessPriority.NORMAL.toCode())));
+        claimRequest.setPatient(new Reference(patient.getId()));
+        claimRequest.setProvider(new Reference(organization.getId()));
+        claimRequest.addInsurance().setSequence(1).setFocal(true).setCoverage(new Reference("Coverage/1"));
+
+
+        ClaimResponse claimResponse = new ClaimResponse();
+        claimResponse.setId("ClaimResponse/1");
+        claimResponse.addIdentifier().setValue(preAuthVhiResponse.getClaimNumber());
+        claimResponse.setPreAuthRef(preAuthVhiResponse.getClaimNumber());
+        claimResponse.setOutcome(ClaimResponse.RemittanceOutcome.COMPLETE); // no approved enum provided
+        claimResponse.setDisposition(preAuthVhiResponse.getClaimStatusInString());
+        claimResponse.addProcessNote().setText(preAuthVhiResponse.getQuery());
+        claimResponse.addTotal().setAmount(new Money().setCurrency("INR").setValue(preAuthVhiResponse.getApprovedAmount())).setCategory(new CodeableConcept(new Coding().setCode(Adjudication.ELIGIBLE.toCode()).setSystem("http://terminology.hl7.org/CodeSystem/adjudication")));
+        claimResponse.setStatus(ClaimResponse.ClaimResponseStatus.ACTIVE);
+        claimResponse.setType(new CodeableConcept(new Coding().setCode(ClaimType.INSTITUTIONAL.toCode()).setSystem("http://terminology.hl7.org/CodeSystem/claim-type")));
+        claimResponse.setUse(ClaimResponse.Use.PREAUTHORIZATION);
+        claimResponse.setCreated(new Date());
+        claimResponse.setPatient(new Reference(patient.getId()));
+        claimResponse.setRequestor(new Reference(organization.getId()));
+        claimResponse.setInsurer(new Reference(organization.getId()));
+        claimResponse.setRequest(new Reference(claimRequest.getId()));
+
+
+        Composition composition= new Composition();
+        composition.setId("composition/" + UUID.randomUUID().toString());
+        composition.setStatus(Composition.CompositionStatus.FINAL);
+        composition.getType().addCoding().setCode("HCXClaimResponse").setSystem("https://hcx.org/document-types").setDisplay("Claim Response");
+        composition.setDate(new Date());
+        composition.addAuthor().setReference("Organization/1");
+        composition.setTitle("Claim Response");
+        composition.addSection().addEntry().setReference("ClaimResponse/1");
+
+        FhirContext fhirctx = FhirContext.forR4();
+        Bundle bundle = new Bundle();
+        bundle.setId(UUID.randomUUID().toString());
+        bundle.setType(Bundle.BundleType.DOCUMENT);
+        bundle.getIdentifier().setSystem("https://www.tmh.in/bundle").setValue(bundle.getId());
+        bundle.setTimestamp(new Date());
+        bundle.addEntry().setFullUrl(composition.getId()).setResource(composition);
+        bundle.addEntry().setFullUrl(claimRequest.getId()).setResource(claimRequest);
+        bundle.addEntry().setFullUrl(patient.getId()).setResource(patient);
+        bundle.addEntry().setFullUrl(organization.getId()).setResource(organization);
+        bundle.addEntry().setFullUrl(claimResponse.getId()).setResource(claimResponse);
+
+        IParser p = fhirctx.newJsonParser().setPrettyPrint(true);
+        String messageString = p.encodeResourceToString(bundle);
+        System.out.println("here is the json " + messageString);
         return messageString;
     }
 

@@ -1,0 +1,30 @@
+{
+    "serviceTypeId": 70,
+    "claim": {
+      "updatedDate": "Nov 9, 2022 9:46:34 AM",
+      "state": 5,
+      "status": "INTIMATION_AWAITED",
+      "age": 0,
+      "validated": false,
+	  "productCode": "SHAHLIP19101V031819",      
+      "medicalEventId": 2,
+      "automaticRestoration": "Y",
+      "superRestoration": "Y",
+      "isSTPClaimReview": false,
+      "sendToManual": false
+    },
+    "hospitalServiceType": {
+      "vitrayaRoomCategory": "SEMI_PRIVATE",
+      "insurerRoomType": "SHARING / SEMI PRIVATE ROOM NON A/C",
+      "singlePrivateAC": false,
+      "serviceType": "SEMI_PRIVATE",
+      "serviceCode": "SERVICE-1079"
+    },
+    "procedure": {
+      "procedureCode": "PROCEDURE-1011"
+    },
+    "procedureMethod": {
+      "procedureNameInsurer": "ANGIOPLASTY (1 vessel)",
+      "procedureMethodCode": "PROCMETHOD-1010"
+    }    
+}

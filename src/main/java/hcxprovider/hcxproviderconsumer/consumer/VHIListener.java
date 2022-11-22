@@ -1,26 +1,17 @@
 package hcxprovider.hcxproviderconsumer.consumer;
 
-import hcxprovider.hcxproviderconsumer.dto.MessageResDTO;
-import hcxprovider.hcxproviderconsumer.model.*;
 import hcxprovider.hcxproviderconsumer.repository.*;
 import hcxprovider.hcxproviderconsumer.dto.Message;
 import hcxprovider.hcxproviderconsumer.services.ListenerService;
 import hcxprovider.hcxproviderconsumer.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
-import netscape.javascript.JSObject;
-import org.apache.tomcat.util.json.JSONParser;
-import org.bson.json.JsonObject;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import com.google.gson.Gson;
-
-import java.util.Optional;
 
 @Slf4j
 @Component
-public class VHIRequestListener {
+public class VHIListener {
 
     @Autowired
     PreAuthRequestRepo preAuthRequestRepo;
@@ -51,7 +42,7 @@ public class VHIRequestListener {
     }
 
     @RabbitListener(queues = Constants.RES_QUEUE)
-    public void recievedResponse(MessageResDTO msg) throws Exception {
+    public void recievedResponse(Message msg) throws Exception {
         try {
             log.info("retrieved message :{}",msg);
             boolean result = listenerService.hcxGenerateResponse(msg);

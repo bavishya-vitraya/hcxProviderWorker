@@ -1,12 +1,17 @@
-package hcxprovider.hcxproviderconsumer.model;
+package hcxprovider.hcxproviderconsumer.dto;
 
 import hcxprovider.hcxproviderconsumer.dto.ClaimAdjudicationData;
 import hcxprovider.hcxproviderconsumer.dto.GalaxyFile;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
-
-public class preAuthVhiResponse {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PreAuthVhiResponse {
 
     private String claimNumber;
     private AdjudicationClaimStatus claimStatus;
