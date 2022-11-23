@@ -266,8 +266,8 @@ public class ListenerServiceImpl implements ListenerService {
         claim.setMeta(meta);
         claim.addIdentifier().setSystem("https://www.gicofIndia.in/policies").setValue(String.valueOf(preAuth.getClaimIllnessTreatmentDetails().getClaimId()));
         claim.addDiagnosis().setSequence(diagnosisSeq++).getDiagnosisReference().setReference("Condition/1");
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept().setText(preAuth.getClaim().getPolicyInceptionDate().toString())).getTimingDateType().setValue(preAuth.getClaim().getPolicyInceptionDate());
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaimIllnessTreatmentDetails().getLineOfTreatmentDetails()))).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(preAuth.getClaimIllnessTreatmentDetails().getLineOfTreatmentDetails()))).setValue(new StringType(preAuth.getClaimIllnessTreatmentDetails().getLineOfTreatmentDetails()));
+        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("INF").setDisplay("PolicyInceptionDate"))).getTimingDateType().setValue(preAuth.getClaim().getPolicyInceptionDate());
+        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("TRD-3").setDisplay("LineOfTreatmentDetails"))).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("TRD").setDisplay("LineOfTreatmentDetails"))).setValue(new StringType(preAuth.getClaimIllnessTreatmentDetails().getLineOfTreatmentDetails()));
 
 
         claim.addProcedure().setSequence(procedureSeq++).getProcedureReference().setReference("Procedure/1");
@@ -275,11 +275,11 @@ public class ListenerServiceImpl implements ListenerService {
 
         //claim admission details
 
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(preAuth.getClaimAdmissionDetails().getAdmissionDate().toString()))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaimAdmissionDetails().getAdmissionDate().toString()))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getAdmissionDate());
+        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("AdmissionDate"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-1").setDisplay("Admission Date"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getAdmissionDate());
 
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(preAuth.getClaimAdmissionDetails().getDischargeDate().toString()))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode(preAuth.getClaimAdmissionDetails().getDischargeDate().toString()))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getDischargeDate());
+        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Discharge date"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-2").setDisplay("Discharge date"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getDischargeDate());
         claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("roomType")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("roomType")).getProductOrService().addCoding().setDisplay("roomType").setCode(preAuth.getClaimAdmissionDetails().getRoomType());
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(String.valueOf(preAuth.getClaimAdmissionDetails().isIcuStay())))).setValue(new BooleanType(preAuth.getClaimAdmissionDetails().isIcuStay()));
+        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("ICU stay"))).setValue(new BooleanType(preAuth.getClaimAdmissionDetails().isIcuStay()));
 
         //document master list
         claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("CostEstimation")).getNet().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
@@ -287,13 +287,13 @@ public class ListenerServiceImpl implements ListenerService {
         claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("CostEstimation")).getCategory().addCoding().setDisplay("costEstimation").setCode(preAuth.getClaimAdmissionDetails().getCostEstimation());
 
         for (DocumentMaster doc : preAuth.getDocumentMasterList()) {
-            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(doc.getDocumentType()))).setValue(new StringType(doc.getDocumentType()));
-            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(doc.getFileType()))).setValue(new StringType(doc.getFileType()));
-            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(doc.getFileName()))).setValue(new StringType(doc.getFileName()));
-            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(doc.getStorageFileName()))).setValue(new StringType(doc.getStorageFileName()));
-            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(doc.getNote()))).setValue(new StringType(doc.getNote()));
-            // claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(String.valueOf(doc.getDocumentStatus())))).setValue(new IntegerType(doc.getDocumentStatus()));
-            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode(String.valueOf(doc.isFileSupported())))).setValue(new BooleanType(doc.isFileSupported()));
+            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ATT").setDisplay("document type"))).setValue(new StringType(doc.getDocumentType()));
+            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ATT").setDisplay("file type"))).setValue(new StringType(doc.getFileType()));
+            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ATT").setDisplay("file name"))).setValue(new StringType(doc.getFileName()));
+            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ATT").setDisplay("storage file name"))).setValue(new StringType(doc.getStorageFileName()));
+            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ATT").setDisplay("note"))).setValue(new StringType(doc.getNote()));
+            //   claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("OTH").setDisplay("document status"))).setValue(new IntegerType(doc.getDocumentStatus()));
+            claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("OTH").setDisplay("file supported"))).setValue(new BooleanType(doc.isFileSupported()));
 
         }
 
@@ -334,7 +334,7 @@ public class ListenerServiceImpl implements ListenerService {
         attachmentDTO.setIllnessCategoryId(preAuth.getIllness().getIllnessCategoryId());
 
         String encodedAttachement = Base64.getUrlEncoder().encodeToString(attachmentDTO.toString().getBytes());
-        claim.addSupportingInfo().setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories"))).setSequence(supportingInfoSeq++).setValue(new StringType(encodedAttachement));
+        claim.addSupportingInfo().setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setDisplay("attachment.json"))).setSequence(supportingInfoSeq++).setValue(new StringType(encodedAttachement));
 
         Composition composition = new Composition();
         composition.setId("composition/" + UUID.randomUUID().toString());
