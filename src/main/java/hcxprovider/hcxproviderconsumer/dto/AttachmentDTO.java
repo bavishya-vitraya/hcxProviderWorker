@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -36,5 +37,8 @@ public class AttachmentDTO {
     private boolean singlePrivateAC;//hospitalServiceType
     private ServiceType serviceType;//hospitalServiceType
     private long parentTableId; //documentMasterList
+    private String illnessName;
+    private String defaultICDCode;
     private int illnessCategoryId;//illness
+    private List<DocumentMaster> documentMasterList;
 }
