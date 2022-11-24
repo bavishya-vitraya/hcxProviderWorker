@@ -181,7 +181,7 @@ public class ListenerServiceImpl implements ListenerService {
 
         Practitioner practitioner = new Practitioner();
         practitioner.setId("Practitioner/1");
-        practitioner.addIdentifier().setValue(preAuth.getClaim().getCreatorId().toString()).setSystem("http://www.acme.com/identifiers/patient");
+        practitioner.addIdentifier().setValue(preAuth.getClaim().getCreatorId().toString()).setSystem("http://www.acme.com/identifiers/patient").setType(new CodeableConcept(new Coding().setSystem("http://terminology.hl7.org/CodeSystem/v2-0203").setCode("PLAC").setDisplay("Placer Identifier")));
         List<DoctorDetailsDto> doctorDetailsDtoList = new Gson().fromJson(preAuth.getClaimIllnessTreatmentDetails().getDoctorsDetails(), new TypeToken<List<DoctorDetailsDto>>() {
         }.getType());
         for (DoctorDetailsDto doctor : doctorDetailsDtoList) {
@@ -191,7 +191,7 @@ public class ListenerServiceImpl implements ListenerService {
 
         Organization organization = new Organization();
         organization.setId("ProviderOrganization/1");
-        organization.addIdentifier().setValue(String.valueOf(preAuth.getClaim().getHospitalId())).setSystem("http://www.acme.com/identifiers/patient");
+        organization.addIdentifier().setValue(String.valueOf(preAuth.getClaim().getHospitalId())).setSystem("http://www.acme.com/identifiers/patient").setType(new CodeableConcept(new Coding().setCode("PRN").setSystem(" http://terminology.hl7.org/CodeSystem/v2-0203").setDisplay("Provider number")));
         organization.addContact().getPurpose().setText(preAuth.getClaim().getCityName()).addCoding().setCode("PATINF").setSystem("http://terminology.hl7.org/CodeSystem/contactentity-type").setDisplay("Patient");
 
         Organization organizationInsurer = new Organization();
@@ -214,7 +214,7 @@ public class ListenerServiceImpl implements ListenerService {
         coverage.setSubscriberId(preAuth.getClaim().getMedicalCardId());
         coverage.setPolicyHolder(new Reference("Patient/1"));
         coverage.addIdentifier().setValue(preAuth.getClaim().getPolicyNumber()).setSystem("https://www.gicofIndia.in/policies");
-        coverage.getType().addCoding().setCode(preAuth.getClaim().getPolicyType().toString()).setDisplay("policyType");
+        coverage.getType().setText(preAuth.getClaim().getPolicyType().toString()).addCoding().setCode("HIP").setDisplay("health insurance plan policy");
         coverage.getPeriod().setStart(preAuth.getClaim().getPolicyStartDate()).setEnd(preAuth.getClaim().getPolicyEndDate());
         coverage.addClass_().setValue(preAuth.getClaim().getPolicyName()).setType(new CodeableConcept(new Coding().setCode("class").setSystem("http://terminology.hl7.org/CodeSystem/coverage-class").setDisplay("Class")));
 
