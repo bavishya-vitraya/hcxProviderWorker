@@ -191,7 +191,7 @@ public class ListenerServiceImpl implements ListenerService {
 
         Organization organization = new Organization();
         organization.setId("ProviderOrganization/1");
-        organization.addIdentifier().setValue(String.valueOf(preAuth.getClaim().getHospitalId())).setSystem("http://www.acme.com/identifiers/patient").setType(new CodeableConcept(new Coding().setCode("PRN").setSystem(" http://terminology.hl7.org/CodeSystem/v2-0203").setDisplay("Provider number")));
+        organization.addIdentifier().setValue(String.valueOf(preAuth.getClaim().getHospitalId())).setSystem("http://www.acme.com/identifiers/patient").setType(new CodeableConcept(new Coding().setCode("PRN").setSystem("http://terminology.hl7.org/CodeSystem/v2-0203").setDisplay("Provider number")));
         organization.addContact().getPurpose().setText(preAuth.getClaim().getCityName()).addCoding().setCode("PATINF").setSystem("http://terminology.hl7.org/CodeSystem/contactentity-type").setDisplay("Patient");
 
         Organization organizationInsurer = new Organization();
