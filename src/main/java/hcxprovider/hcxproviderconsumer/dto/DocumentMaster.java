@@ -11,16 +11,12 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DocumentMaster {
-    private long id;
     private long parentTableId;
-    private int illnessDocumentId;
     private String documentType;
     private String fileName;
     private String storageFileName;
     private String fileType;
     private boolean fileSupported;
-    private Date createTime;
-    private Date updateTime;
     private String note;
     private int documentStatus;
 }

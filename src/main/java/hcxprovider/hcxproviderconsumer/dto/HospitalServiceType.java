@@ -13,15 +13,10 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class HospitalServiceType {
-    private int id;
-    private int hospitalId;
     private VitrayaRoomCategory vitrayaRoomCategory;
     private String roomType;
     private String insurerRoomType;
     private boolean singlePrivateAC;
     private BigDecimal roomTariffPerDay;
     private ServiceType serviceType;
-    private Date createTime;
-    private Date updateTime;
-    private String serviceCode;
 }

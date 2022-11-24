@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Illness {
-    private int id;
     private int illnessCategoryId;
     private String illnessName;
     private String defaultICDCode;

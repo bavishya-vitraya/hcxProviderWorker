@@ -177,6 +177,8 @@ public class ListenerServiceImpl implements ListenerService {
         int insuranceSeq = 1, diagnosisSeq = 1, procedureSeq = 1, supportingInfoSeq = 1, itemSeq = 1, careSeq = 1, detailSeq = 1;
         PreAuthDetails preAuth = preAuthRequest.getPreAuthReq();
         AttachmentDTO attachmentDTO = new AttachmentDTO();
+        Claim claim = new Claim();
+        Bundle bundle = new Bundle();
 
 
         Practitioner practitioner = new Practitioner();
@@ -211,6 +213,9 @@ public class ListenerServiceImpl implements ListenerService {
 
         Coverage coverage = new Coverage();
         coverage.setId("Coverage/1");
+        coverage.setStatus(Coverage.CoverageStatus.ACTIVE);
+        coverage.setBeneficiary(new Reference("Patient/1"));
+        coverage.addPayor().setReference("ProviderOrganization/1");
         coverage.setSubscriberId(preAuth.getClaim().getMedicalCardId());
         coverage.setPolicyHolder(new Reference("Patient/1"));
         coverage.addIdentifier().setValue(preAuth.getClaim().getPolicyNumber()).setSystem("https://www.gicofIndia.in/policies");
@@ -226,14 +231,6 @@ public class ListenerServiceImpl implements ListenerService {
         condition.setRecordedDate(preAuth.getClaimIllnessTreatmentDetails().getDateOfDiagnosis());
 
 
-        List<ChronicIllnessDTO> chronicIllnessDTOList = preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetailsJSON().getChronicIllnessList();
-        for (ChronicIllnessDTO chronicIllness : chronicIllnessDTOList) {
-            condition.addIdentifier().setValue(String.valueOf(chronicIllness.getIllnessId()));
-            condition.setRecordedDate(chronicIllness.getDiagnosisDate());
-            condition.setCode(new CodeableConcept(new Coding().setDisplay("No current problems or disability").setCode("160245001").setSystem("http://snomed.info/sct")).setText(chronicIllness.getIllnessName()));
-            condition.getOnsetAge().setValue(chronicIllness.getNumberOfMonths());
-        }
-
 
         Device device = new Device();
         device.setId("Device/1");
@@ -247,7 +244,7 @@ public class ListenerServiceImpl implements ListenerService {
         procedure.setCode(new CodeableConcept(new Coding().setSystem("http://snomed.info/sct").setDisplay("Percutaneous transluminal angioplasty").setCode("5431005")).setText(preAuth.getProcedure().getName()));
 
 
-        Claim claim = new Claim();
+
         claim.setUse(Claim.Use.PREAUTHORIZATION);
         claim.setId("Claim/1");
         claim.addIdentifier().setSystem("https://www.tmh.in/hcx-documents").setValue(preAuth.getClaim().getId().toString());
@@ -273,7 +270,11 @@ public class ListenerServiceImpl implements ListenerService {
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-1").setDisplay("Admission date -Discharge date"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getAdmissionDate());
 
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-2").setDisplay("Discharge start-discharge end time"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getDischargeDate());
-        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("room type"))).addDetail().setSequence(detailSeq++).setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("room type")).setText(preAuth.getClaimAdmissionDetails().getRoomType())).setCategory(new CodeableConcept(new Coding().setDisplay("Room Charges").setSystem("https://irdai.gov.in/benefit-billing-subgroup-code").setCode("101000")));
+        claim.addItem().setSequence(itemSeq++).
+                setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("room type"))).
+                addDetail().setSequence(detailSeq++).
+                setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("room type"))
+                        .setText(preAuth.getClaimAdmissionDetails().getRoomType())).setCategory(new CodeableConcept(new Coding().setDisplay("Room Charges").setSystem("https://irdai.gov.in/benefit-billing-subgroup-code").setCode("101000")));
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCode(new CodeableConcept(new Coding().setDisplay("PatientICUStay").setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-6"))).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setValue(new BooleanType(preAuth.getClaimAdmissionDetails().isIcuStay()));
 
         //document master list
@@ -283,7 +284,9 @@ public class ListenerServiceImpl implements ListenerService {
 
 
         // hospitalServiceType completed
-        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("Expense"))).getUnitPrice().setCurrency("INR").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
+        claim.addItem().
+                setSequence(itemSeq++).
+                setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("Expense"))).getUnitPrice().setCurrency("INR").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
 
         claim.setType(new CodeableConcept(new Coding().setCode(ClaimType.INSTITUTIONAL.toCode()).setSystem("http://terminology.hl7.org/CodeSystem/claim-type")));
 
@@ -318,6 +321,7 @@ public class ListenerServiceImpl implements ListenerService {
         attachmentDTO.setDocumentMasterList(preAuth.getDocumentMasterList());
         attachmentDTO.setIllnessName(preAuth.getIllness().getIllnessName());
         attachmentDTO.setDefaultICDCode(preAuth.getIllness().getDefaultICDCode());
+        attachmentDTO.setChronicIllnessDetailsJSON(preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetailsJSON());
 
         String attachmentString = new Gson().toJson(attachmentDTO);
         log.info("attachmentString{}", attachmentString);
@@ -333,7 +337,7 @@ public class ListenerServiceImpl implements ListenerService {
         composition.setTitle("Claim Request");
         composition.addSection().addEntry().setReference("Claim/1");
 
-        Bundle bundle = new Bundle();
+
         bundle.setId(UUID.randomUUID().toString());
         bundle.setType(Bundle.BundleType.DOCUMENT);
         bundle.getIdentifier().setSystem("https://www.tmh.in/bundle").setValue(bundle.getId());
@@ -345,6 +349,7 @@ public class ListenerServiceImpl implements ListenerService {
         bundle.addEntry().setFullUrl(organizationInsurer.getId()).setResource(organizationInsurer);
         bundle.addEntry().setFullUrl(procedure.getId()).setResource(procedure);
         bundle.addEntry().setFullUrl(condition.getId()).setResource(condition);
+        bundle.addEntry().setFullUrl(coverage.getId()).setResource(coverage);
         bundle.addEntry().setFullUrl(claim.getId()).setResource(claim);
 
         String messageString = parser.encodeResourceToString(bundle);

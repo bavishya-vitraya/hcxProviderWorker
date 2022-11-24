@@ -10,12 +10,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Procedure {
-    private long id;
-    private Date createTime;
-    private boolean enabled;
     private String description;
-    private int departmentId;
-    private Date updateTime;
     private String name;
-    private String procedureCode;
+
 }
