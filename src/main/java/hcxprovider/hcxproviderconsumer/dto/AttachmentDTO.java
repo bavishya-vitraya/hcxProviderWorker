@@ -5,6 +5,7 @@ import hcxprovider.hcxproviderconsumer.enums.VitrayaRoomCategory;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -13,6 +14,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class AttachmentDTO {
     private int serviceTypeId;
     private boolean deleted;

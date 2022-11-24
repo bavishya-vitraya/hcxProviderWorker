@@ -319,8 +319,9 @@ public class ListenerServiceImpl implements ListenerService {
         attachmentDTO.setIllnessName(preAuth.getIllness().getIllnessName());
         attachmentDTO.setDefaultICDCode(preAuth.getIllness().getDefaultICDCode());
 
-
-        String encodedAttachement = Base64.getUrlEncoder().encodeToString(attachmentDTO.toString().getBytes());
+        String attachmentString = new Gson().toJson(attachmentDTO);
+        log.info("attachmentString{}", attachmentString);
+        String encodedAttachement = Base64.getUrlEncoder().encodeToString(attachmentString.getBytes());
         claim.addSupportingInfo().setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setDisplay("attachment.json"))).setSequence(supportingInfoSeq++).setValue(new StringType(encodedAttachement));
 
         Composition composition = new Composition();
