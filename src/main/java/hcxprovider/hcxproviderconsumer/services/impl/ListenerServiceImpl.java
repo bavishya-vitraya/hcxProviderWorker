@@ -15,6 +15,7 @@ import hcxprovider.hcxproviderconsumer.repository.PreAuthRequestRepo;
 import hcxprovider.hcxproviderconsumer.repository.PreAuthResponseRepo;
 import hcxprovider.hcxproviderconsumer.services.ListenerService;
 import hcxprovider.hcxproviderconsumer.utils.Constants;
+import hcxprovider.hcxproviderconsumer.utils.DateUtils;
 import io.hcxprotocol.impl.HCXOutgoingRequest;
 import io.hcxprotocol.init.HCXIntegrator;
 import io.hcxprotocol.utils.Operations;
@@ -35,6 +36,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
@@ -211,7 +214,7 @@ public class ListenerServiceImpl implements ListenerService {
         Patient patient = new Patient();
         patient.setId("Patient/1");
         patient.addIdentifier().setValue(preAuth.getClaim().getHospitalPatientId()).setSystem("http://www.acme.com/identifiers/patient");
-        patient.setBirthDate(preAuth.getClaim().getDob());
+        //patient.setBirthDate(preAuth.getClaim().getDob());
         patient.getGenderElement().setValue(AdministrativeGender.valueOf(preAuth.getClaim().getGender()));
         patient.addName().addGiven(preAuth.getClaim().getPatientName());
         patient.addTelecom().setValue(preAuth.getClaim().getPatient_mobile_no()).setSystem(ContactPointSystem.PHONE);
@@ -252,12 +255,14 @@ public class ListenerServiceImpl implements ListenerService {
         procedure.setCode(new CodeableConcept(new Coding().setSystem("http://snomed.info/sct").setDisplay("Percutaneous transluminal angioplasty").setCode("5431005")).setText(preAuth.getProcedure().getName()));
 
 
-
         claim.setUse(Claim.Use.PREAUTHORIZATION);
         claim.setId("Claim/1");
         claim.addIdentifier().setSystem("https://www.tmh.in/hcx-documents").setValue(preAuth.getClaim().getId().toString());
         claim.setEnterer(new Reference("Practitioner/1"));
-        claim.setCreated(preAuth.getClaim().getCreatedDate());
+        LocalDateTime datetime = LocalDateTime.parse(preAuth.getClaim().getCreatedDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S"));
+
+
+        //claim.setCreated(createdDate);
         claim.setStatus(Claim.ClaimStatus.ACTIVE);
         claim.setProvider(new Reference("Organization/1"));
         claim.setPatient(new Reference("Patient/1"));
@@ -266,7 +271,6 @@ public class ListenerServiceImpl implements ListenerService {
         claim.setMeta(meta);
         //   claim.addIdentifier().setSystem("https://www.gicofIndia.in/policies").setValue(String.valueOf(preAuth.getClaimIllnessTreatmentDetails().getClaimId()));
         claim.addDiagnosis().setSequence(diagnosisSeq++).getDiagnosisReference().setReference("Condition/1");
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("INF").setDisplay("PolicyInceptionDate"))).getTimingDateType().setValue(preAuth.getClaim().getPolicyInceptionDate());
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("TRD-3").setDisplay("Surgical Management"))).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("TRD").setDisplay("Treatment detail"))).setValue(new StringType(preAuth.getClaimIllnessTreatmentDetails().getLineOfTreatmentDetails()));
 
 
@@ -275,20 +279,15 @@ public class ListenerServiceImpl implements ListenerService {
 
         //claim admission details
 
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-1").setDisplay("Admission date -Discharge date"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getAdmissionDate());
-
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-2").setDisplay("Discharge start-discharge end time"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getDischargeDate());
+//        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-1").setDisplay("Admission date -Discharge date"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getAdmissionDate());
+//
+//        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-2").setDisplay("Discharge start-discharge end time"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getDischargeDate());
         claim.addItem().setSequence(itemSeq++).
                 setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("room type"))).
                 addDetail().setSequence(detailSeq++).
                 setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("room type"))
                         .setText(preAuth.getClaimAdmissionDetails().getRoomType())).setCategory(new CodeableConcept(new Coding().setDisplay("Room Charges").setSystem("https://irdai.gov.in/benefit-billing-subgroup-code").setCode("101000")));
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCode(new CodeableConcept(new Coding().setDisplay("PatientICUStay").setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-6"))).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setValue(new BooleanType(preAuth.getClaimAdmissionDetails().isIcuStay()));
-
-        //document master list
-//        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("CostEstimation")).getNet().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
-//        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("CostEstimation")).getQuantity().setUserData("CostEstimation", preAuth.getClaimAdmissionDetails().getCostEstimation());
-//        claim.addItem().setSequence(itemSeq++).setProductOrService(new CodeableConcept().setText("CostEstimation")).addDetail().setSequence(setSequence(detailSeq)).setProductOrService(new CodeableConcept().setText("CostEstimation")).getCategory().addCoding().setDisplay("costEstimation").setCode(preAuth.getClaimAdmissionDetails().getCostEstimation());
 
 
         // hospitalServiceType completed
@@ -304,7 +303,7 @@ public class ListenerServiceImpl implements ListenerService {
         //Attachment
         attachmentDTO.setServiceTypeId(preAuth.getServiceTypeId());
         attachmentDTO.setDeleted(preAuth.getClaim().isDeleted());
-        attachmentDTO.setUpdatedDate(preAuth.getClaim().getUpdatedDate());
+        //attachmentDTO.setUpdatedDate(preAuth.getClaim().getUpdatedDate());
         attachmentDTO.setState(preAuth.getClaim().getState());
         attachmentDTO.setStatus(preAuth.getClaim().getStatus());
         attachmentDTO.setAge(preAuth.getClaim().getAge());
@@ -329,12 +328,13 @@ public class ListenerServiceImpl implements ListenerService {
         attachmentDTO.setDocumentMasterList(preAuth.getDocumentMasterList());
         attachmentDTO.setIllnessName(preAuth.getIllness().getIllnessName());
         attachmentDTO.setDefaultICDCode(preAuth.getIllness().getDefaultICDCode());
+        attachmentDTO.setPolicyInceptionDate(preAuth.getClaim().getPolicyInceptionDate());
         attachmentDTO.setChronicIllnessDetailsJSON(preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetailsJSON());
 
         String attachmentString = new Gson().toJson(attachmentDTO);
         log.info("attachmentString{}", attachmentString);
         String encodedAttachement = Base64.getUrlEncoder().encodeToString(attachmentString.getBytes());
-        claim.addSupportingInfo().setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setDisplay("attachment.json"))).setSequence(supportingInfoSeq++).setValue(new StringType(encodedAttachement));
+        claim.addSupportingInfo().setCode(new CodeableConcept(new Coding().setCode("INF-1").setDisplay("additional info related to claim").setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes"))).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("INF").setDisplay("additional info related to claim"))).setSequence(supportingInfoSeq++).setValue(new StringType(encodedAttachement));
 
         Composition composition = new Composition();
         composition.setId("composition/" + UUID.randomUUID().toString());

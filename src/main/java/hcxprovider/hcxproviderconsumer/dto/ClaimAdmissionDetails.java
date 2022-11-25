@@ -12,8 +12,8 @@ import java.util.Date;
 @NoArgsConstructor
 public class ClaimAdmissionDetails {
     private long claimId;
-    private Date admissionDate;
-    private Date dischargeDate;
+    private String admissionDate;
+    private String dischargeDate;
     private String roomType;
     private int hospitalServiceTypeId;
     private int stayDuration;
