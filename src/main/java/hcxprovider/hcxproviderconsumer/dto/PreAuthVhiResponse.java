@@ -1,7 +1,5 @@
 package hcxprovider.hcxproviderconsumer.dto;
 
-import hcxprovider.hcxproviderconsumer.dto.ClaimAdjudicationData;
-import hcxprovider.hcxproviderconsumer.dto.GalaxyFile;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,7 +15,7 @@ public class PreAuthVhiResponse {
     private AdjudicationClaimStatus claimStatus;
     private String claimStatusInString;
     private String query;
-    private List<GalaxyFile> files;
+    private List<FileDTO> files;
     private BigDecimal approvedAmount;
 
 

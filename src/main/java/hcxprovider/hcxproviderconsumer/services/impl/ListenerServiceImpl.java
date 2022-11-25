@@ -155,7 +155,15 @@ public class ListenerServiceImpl implements ListenerService {
                 claimResponse = (ClaimResponse) entryComponent.getResource();
                 result.setClaimNumber(claimResponse.getPreAuthRef());
                 result.setClaimStatusInString(claimResponse.getDisposition());
-                result.setQuery(claimResponse.getProcessNote().get(0).getText());
+                String encodedAttachment = claimResponse.getProcessNote().get(0).getText();
+                byte[] decodedBytes = Base64.getDecoder().decode(encodedAttachment);
+                String decodedAttachment = new String(decodedBytes);
+                AttachmentResDTO attachmentResDTO = new Gson().fromJson(decodedAttachment, new TypeToken<AttachmentResDTO>() {
+                }.getType());
+
+                result.setQuery(attachmentResDTO.getQuery());
+                result.setFiles(attachmentResDTO.getFiles());
+
                 result.setApprovedAmount(claimResponse.getTotal().get(0).getAmount().getValue());
                 if (claimResponse.getOutcome().toString().equalsIgnoreCase("COMPLETE")) {
                     result.setClaimStatus(PreAuthVhiResponse.AdjudicationClaimStatus.APPROVED);
@@ -164,7 +172,7 @@ public class ListenerServiceImpl implements ListenerService {
             }
 
         }
-        log.info("vhi result{}", result);
+        log.info("vhi result{}", new Gson().toJson(result));
         log.info("Parsed Claim Response from Fhir:, {}", claimResponse.getDisposition());
         return result;
     }
