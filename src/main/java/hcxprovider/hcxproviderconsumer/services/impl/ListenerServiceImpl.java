@@ -36,6 +36,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -184,7 +186,7 @@ public class ListenerServiceImpl implements ListenerService {
         return seq;
     }
     @Override
-    public String buildClaimFhirProfile(PreAuthRequest preAuthRequest) {
+    public String buildClaimFhirProfile(PreAuthRequest preAuthRequest) throws ParseException {
         int insuranceSeq = 1, diagnosisSeq = 1, procedureSeq = 1, supportingInfoSeq = 1, itemSeq = 1, careSeq = 1, detailSeq = 1;
         PreAuthDetails preAuth = preAuthRequest.getPreAuthReq();
         AttachmentDTO attachmentDTO = new AttachmentDTO();
@@ -214,7 +216,7 @@ public class ListenerServiceImpl implements ListenerService {
         Patient patient = new Patient();
         patient.setId("Patient/1");
         patient.addIdentifier().setValue(preAuth.getClaim().getHospitalPatientId()).setSystem("http://www.acme.com/identifiers/patient");
-        //patient.setBirthDate(preAuth.getClaim().getDob());
+        patient.setBirthDate(preAuth.getClaim().getDob());
         patient.getGenderElement().setValue(AdministrativeGender.valueOf(preAuth.getClaim().getGender()));
         patient.addName().addGiven(preAuth.getClaim().getPatientName());
         patient.addTelecom().setValue(preAuth.getClaim().getPatient_mobile_no()).setSystem(ContactPointSystem.PHONE);
@@ -259,17 +261,17 @@ public class ListenerServiceImpl implements ListenerService {
         claim.setId("Claim/1");
         claim.addIdentifier().setSystem("https://www.tmh.in/hcx-documents").setValue(preAuth.getClaim().getId().toString());
         claim.setEnterer(new Reference("Practitioner/1"));
-        LocalDateTime datetime = LocalDateTime.parse(preAuth.getClaim().getCreatedDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S"));
 
 
-        //claim.setCreated(createdDate);
+
+        claim.setCreated(preAuth.getClaim().getCreatedDate());
         claim.setStatus(Claim.ClaimStatus.ACTIVE);
         claim.setProvider(new Reference("Organization/1"));
         claim.setPatient(new Reference("Patient/1"));
         claim.setInsurer(new Reference("InsurerOrganization/2"));
         claim.addInsurance().setSequence(insuranceSeq++).setFocal(true).setCoverage(new Reference("Coverage/1"));
         claim.setMeta(meta);
-        //   claim.addIdentifier().setSystem("https://www.gicofIndia.in/policies").setValue(String.valueOf(preAuth.getClaimIllnessTreatmentDetails().getClaimId()));
+        //claim.addIdentifier().setSystem("https://www.gicofIndia.in/policies").setValue(String.valueOf(preAuth.getClaimIllnessTreatmentDetails().getClaimId()));
         claim.addDiagnosis().setSequence(diagnosisSeq++).getDiagnosisReference().setReference("Condition/1");
         claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("TRD-3").setDisplay("Surgical Management"))).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("TRD").setDisplay("Treatment detail"))).setValue(new StringType(preAuth.getClaimIllnessTreatmentDetails().getLineOfTreatmentDetails()));
 
@@ -279,9 +281,9 @@ public class ListenerServiceImpl implements ListenerService {
 
         //claim admission details
 
-//        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-1").setDisplay("Admission date -Discharge date"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getAdmissionDate());
-//
-//        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-2").setDisplay("Discharge start-discharge end time"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getDischargeDate());
+       claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-1").setDisplay("Admission date -Discharge date"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getAdmissionDate());
+
+       claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-2").setDisplay("Discharge start-discharge end time"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getDischargeDate());
         claim.addItem().setSequence(itemSeq++).
                 setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("room type"))).
                 addDetail().setSequence(detailSeq++).
@@ -303,7 +305,7 @@ public class ListenerServiceImpl implements ListenerService {
         //Attachment
         attachmentDTO.setServiceTypeId(preAuth.getServiceTypeId());
         attachmentDTO.setDeleted(preAuth.getClaim().isDeleted());
-        //attachmentDTO.setUpdatedDate(preAuth.getClaim().getUpdatedDate());
+        attachmentDTO.setUpdatedDate(preAuth.getClaim().getUpdatedDate());
         attachmentDTO.setState(preAuth.getClaim().getState());
         attachmentDTO.setStatus(preAuth.getClaim().getStatus());
         attachmentDTO.setAge(preAuth.getClaim().getAge());
