@@ -284,12 +284,7 @@ public class ListenerServiceImpl implements ListenerService {
        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-1").setDisplay("Admission date -Discharge date"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getAdmissionDate());
 
        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setCode(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-2").setDisplay("Discharge start-discharge end time"))).getTimingDateType().setValue(preAuth.getClaimAdmissionDetails().getDischargeDate());
-        claim.addItem().setSequence(itemSeq++).
-                setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("room type"))).
-                addDetail().setSequence(detailSeq++).
-                setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("room type"))
-                        .setText(preAuth.getClaimAdmissionDetails().getRoomType())).setCategory(new CodeableConcept(new Coding().setDisplay("Room Charges").setSystem("https://irdai.gov.in/benefit-billing-subgroup-code").setCode("101000")));
-        claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCode(new CodeableConcept(new Coding().setDisplay("PatientICUStay").setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-6"))).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setValue(new BooleanType(preAuth.getClaimAdmissionDetails().isIcuStay()));
+       claim.addSupportingInfo().setSequence(supportingInfoSeq++).setCode(new CodeableConcept(new Coding().setDisplay("PatientICUStay").setSystem("http://hcxprotocol.io/codes/claim-supporting-info-codes").setCode("ONS-6"))).setCategory(new CodeableConcept(new Coding().setSystem("http://hcxprotocol.io/codes/claim-supporting-info-categories").setCode("ONS").setDisplay("Period, start or end dates of aspects of the Condition"))).setValue(new BooleanType(preAuth.getClaimAdmissionDetails().isIcuStay()));
 
 
         // hospitalServiceType completed
@@ -332,6 +327,10 @@ public class ListenerServiceImpl implements ListenerService {
         attachmentDTO.setDefaultICDCode(preAuth.getIllness().getDefaultICDCode());
         attachmentDTO.setPolicyInceptionDate(preAuth.getClaim().getPolicyInceptionDate());
         attachmentDTO.setChronicIllnessDetailsJSON(preAuth.getClaimIllnessTreatmentDetails().getChronicIllnessDetailsJSON());
+        attachmentDTO.setProcedureCode(preAuth.getProcedureMethod().getProcedureCode());
+        attachmentDTO.setRoomType(preAuth.getClaimAdmissionDetails().getRoomType());
+
+
 
         String attachmentString = new Gson().toJson(attachmentDTO);
         log.info("attachmentString{}", attachmentString);

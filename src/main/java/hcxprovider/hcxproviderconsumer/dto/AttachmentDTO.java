@@ -45,4 +45,6 @@ public class AttachmentDTO {
     private List<DocumentMaster> documentMasterList;
     private ChronicIllnessDetailsJSON ChronicIllnessDetailsJSON;
     private Date policyInceptionDate;
+    private String procedureCode;
+    private String roomType;
 }
