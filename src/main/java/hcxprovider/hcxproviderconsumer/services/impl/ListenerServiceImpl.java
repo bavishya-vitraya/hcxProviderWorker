@@ -15,7 +15,6 @@ import hcxprovider.hcxproviderconsumer.repository.PreAuthRequestRepo;
 import hcxprovider.hcxproviderconsumer.repository.PreAuthResponseRepo;
 import hcxprovider.hcxproviderconsumer.services.ListenerService;
 import hcxprovider.hcxproviderconsumer.utils.Constants;
-import hcxprovider.hcxproviderconsumer.utils.DateUtils;
 import io.hcxprotocol.impl.HCXOutgoingRequest;
 import io.hcxprotocol.init.HCXIntegrator;
 import io.hcxprotocol.utils.Operations;
@@ -99,8 +98,6 @@ public class ListenerServiceImpl implements ListenerService {
     }
     @Override
     public boolean hcxGenerateRequest(Message msg) throws Exception {
-//      File payloadFile = new ClassPathResource("input/claim.txt").getFile();
-//      String payload = FileUtils.readFileToString(payloadFile);
         String payload = null;
         CoverageEligibilityRequest coverageEligibilityRequest = new CoverageEligibilityRequest();
         ClaimRequest claimRequest = new ClaimRequest();
@@ -109,41 +106,61 @@ public class ListenerServiceImpl implements ListenerService {
 
         Operations operation = null;
         if (reqType.equalsIgnoreCase(Constants.COVERAGE_ELIGIBILITY)) {
-            coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getReferenceId());
-            log.info("CoverageEligibility:{}", coverageEligibilityRequest);
+            try {
+                coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getReferenceId());
+                log.info("CoverageEligibility:{}", coverageEligibilityRequest);
+            }
+            catch(Exception e){
+                log.error("error in fetching coverage request", e);
+            }
             operation = Operations.COVERAGE_ELIGIBILITY_CHECK;
         } else if (reqType.equalsIgnoreCase(Constants.CLAIM)) {
-            claimRequest = claimRequestRepo.findClaimRequestById(msg.getReferenceId());
-            log.info("ClaimReq:{}", claimRequest);
+            try {
+                claimRequest = claimRequestRepo.findClaimRequestById(msg.getReferenceId());
+                log.info("ClaimReq {}", claimRequest);
+            }
+            catch(Exception e){
+                log.error("error in fetching claim request", e);
+            }
             operation = Operations.CLAIM_SUBMIT;
             payload = buildClaimFhirProfile(preAuthRequest);
         } else if (reqType.equalsIgnoreCase(Constants.PRE_AUTH)) {
-            preAuthRequest = preAuthRequestRepo.findPreAuthRequestById(msg.getReferenceId());
-            log.info("PreAuthReq:{}", preAuthRequest);
-            operation = Operations.PRE_AUTH_SUBMIT;
-            payload = buildClaimFhirProfile(preAuthRequest);
+
+            try {
+                preAuthRequest = preAuthRequestRepo.findPreAuthRequestById(msg.getReferenceId());
+                log.info("PreAuthReq:{}", preAuthRequest);
+            }
+            catch(Exception e){
+                log.error("error in fetching preAuth request", e);
+            }
+                    operation = Operations.PRE_AUTH_SUBMIT;
+                    payload = buildClaimFhirProfile(preAuthRequest);
         }
         HCXIntegrator.init(setConfig());
         Map<String, Object> output = new HashMap<>();
         HCXOutgoingRequest hcxOutgoingRequest = new HCXOutgoingRequest();
         Boolean response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
-        log.info(String.valueOf(response));
-        log.info("{}", output);
-        return true;
+        log.info("response {} output {} ",response, output);
+        return response;
     }
 
 
     @Override
-    public boolean vhiGenerateResponse(Message msg) throws Exception {
+    public boolean vhiGenerateResponse(Message msg)  {
         String resType = msg.getMessageType();
         PreAuthResponse vhiResponse = new PreAuthResponse();
         Operations operation = null;
         if (resType.equalsIgnoreCase(Constants.PRE_AUTH_RESPONSE)) {
-            vhiResponse = preAuthResponseRepo.findPreAuthResponseById(msg.getReferenceId());
-            log.info("PreAuthResponse:{}", vhiResponse);
-            PreAuthVhiResponse preAuthVhiResponse = buildVhiClaimProfile(vhiResponse.getFhirPayload());
-            vhiResponse.setPreAuthResponse(preAuthVhiResponse);
-            preAuthResponseRepo.save(vhiResponse);
+            try {
+                vhiResponse = preAuthResponseRepo.findPreAuthResponseById(msg.getReferenceId());
+                log.info("PreAuthResponse:{}", vhiResponse);
+                PreAuthVhiResponse preAuthVhiResponse = buildVhiClaimProfile(vhiResponse.getFhirPayload());
+                vhiResponse.setPreAuthResponse(preAuthVhiResponse);
+                preAuthResponseRepo.save(vhiResponse);
+            }
+            catch (Exception e ){
+                e.printStackTrace();
+            }
 
         }
        return true;
@@ -155,7 +172,6 @@ public class ListenerServiceImpl implements ListenerService {
         ClaimResponse claimResponse = new ClaimResponse();
         for(Bundle.BundleEntryComponent entryComponent: bundle.getEntry()){
             String resourceType = entryComponent.getResource().getResourceType().toString();
-            log.info(String.valueOf(entryComponent.getResource().getResourceType()));
             if(resourceType.equalsIgnoreCase(Constants.CLAIM_RESPONSE_RESOURCE)) {
                 claimResponse = (ClaimResponse) entryComponent.getResource();
                 result.setClaimNumber(claimResponse.getPreAuthRef());
@@ -178,7 +194,7 @@ public class ListenerServiceImpl implements ListenerService {
 
         }
         log.info("vhi result{}", new Gson().toJson(result));
-        log.info("Parsed Claim Response from Fhir:, {}", claimResponse.getDisposition());
+        log.info("Parsed Claim Response from Fhir {}", claimResponse.getDisposition());
         return result;
     }
     public int setSequence(int seq){
@@ -232,7 +248,7 @@ public class ListenerServiceImpl implements ListenerService {
         coverage.setSubscriberId(preAuth.getClaim().getMedicalCardId());
         coverage.setPolicyHolder(new Reference("Patient/1"));
         coverage.addIdentifier().setValue(preAuth.getClaim().getPolicyNumber()).setSystem("https://www.gicofIndia.in/policies");
-        coverage.getType().setText(preAuth.getClaim().getPolicyType().toString()).addCoding().setCode("HIP").setDisplay("health insurance plan policy");
+        coverage.getType().setText(preAuth.getClaim().getPolicyType().toString()).addCoding().setCode("HIP").setDisplay("health insurance plan policy").setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
         coverage.getPeriod().setStart(preAuth.getClaim().getPolicyStartDate()).setEnd(preAuth.getClaim().getPolicyEndDate());
         coverage.addClass_().setValue(preAuth.getClaim().getPolicyName()).setType(new CodeableConcept(new Coding().setCode("class").setSystem("http://terminology.hl7.org/CodeSystem/coverage-class").setDisplay("Class")));
 
@@ -292,9 +308,9 @@ public class ListenerServiceImpl implements ListenerService {
                 setSequence(itemSeq++).
                 setProductOrService(new CodeableConcept(new Coding().setCode("99555").setSystem("http://terminology.hl7.org/CodeSystem/ex-USCLS").setDisplay("Expense"))).getUnitPrice().setCurrency("INR").setValue(preAuth.getHospitalServiceType().getRoomTariffPerDay());
 
-        claim.setType(new CodeableConcept(new Coding().setCode(ClaimType.INSTITUTIONAL.toCode()).setSystem("http://terminology.hl7.org/CodeSystem/claim-type")));
+        claim.setType(new CodeableConcept(new Coding().setCode(ClaimType.INSTITUTIONAL.toCode()).setSystem("http://terminology.hl7.org/CodeSystem/claim-type").setDisplay("Institutional")));
 
-        claim.setPriority(new CodeableConcept(new Coding().setSystem("http://terminology.hl7.org/CodeSystem/processpriority").setCode(ProcessPriority.NORMAL.toCode())));
+        claim.setPriority(new CodeableConcept(new Coding().setSystem("http://terminology.hl7.org/CodeSystem/processpriority").setCode(ProcessPriority.NORMAL.toCode()).setDisplay("Normal")));
 
 
         //Attachment
@@ -362,7 +378,7 @@ public class ListenerServiceImpl implements ListenerService {
         bundle.addEntry().setFullUrl(claim.getId()).setResource(claim);
 
         String messageString = parser.encodeResourceToString(bundle);
-        System.out.println("here is the json " + messageString);
+        log.info("fhir json ", messageString);
         return messageString;
     }
 

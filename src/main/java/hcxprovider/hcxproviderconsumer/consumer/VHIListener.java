@@ -36,19 +36,14 @@ public class VHIListener {
             boolean result = listenerService.hcxGenerateRequest(msg);
             log.info(String.valueOf(result));
         }
-        catch(Exception exception){
-            log.error("Exception :"+exception);
+        catch(Exception e){
+            log.error("Exception {}",e);
         }
     }
 
     @RabbitListener(queues = Constants.RES_QUEUE)
     public void recievedResponse(Message msg) throws Exception {
-        try {
             log.info("retrieved message :{}",msg);
             listenerService.vhiGenerateResponse(msg);
-        }
-        catch(Exception exception){
-            log.error("Exception :"+exception);
-        }
     }
 }

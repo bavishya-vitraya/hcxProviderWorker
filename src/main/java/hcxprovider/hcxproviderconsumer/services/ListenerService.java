@@ -10,7 +10,7 @@ import java.text.ParseException;
 
 public interface ListenerService {
     boolean hcxGenerateRequest(Message msg) throws Exception;
-    boolean vhiGenerateResponse(Message msg) throws Exception;
+    boolean vhiGenerateResponse(Message msg);
     String buildClaimFhirProfile(PreAuthRequest preAuthRequest) throws ParseException;
     PreAuthVhiResponse buildVhiClaimProfile(String fhirPayload);
 }
