@@ -17,5 +17,7 @@ public class PreAuthRequest {
     private String senderCode;
     private String insurerCode;
     private String requestType;
+    private String correlationId;
+    private String status;
     private PreAuthDetails preAuthReq;
 }

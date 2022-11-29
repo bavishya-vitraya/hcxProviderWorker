@@ -5,6 +5,7 @@ import ca.uhn.fhir.parser.IParser;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import hcxprovider.hcxproviderconsumer.dto.*;
+import hcxprovider.hcxproviderconsumer.enums.Status;
 import hcxprovider.hcxproviderconsumer.model.ClaimRequest;
 import hcxprovider.hcxproviderconsumer.model.CoverageEligibilityRequest;
 import hcxprovider.hcxproviderconsumer.model.PreAuthRequest;
@@ -103,8 +104,12 @@ public class ListenerServiceImpl implements ListenerService {
         ClaimRequest claimRequest = new ClaimRequest();
         PreAuthRequest preAuthRequest = new PreAuthRequest();
         String reqType = msg.getMessageType();
-
         Operations operation = null;
+        HCXIntegrator.init(setConfig());
+        Map<String, Object> output = new HashMap<>();
+        Map<String, Object> responseObject = new HashMap<>();
+        HCXOutgoingRequest hcxOutgoingRequest = new HCXOutgoingRequest();
+        Boolean response = false;
         if (reqType.equalsIgnoreCase(Constants.COVERAGE_ELIGIBILITY)) {
             try {
                 coverageEligibilityRequest = coverageEligibilityRequestRepo.findCoverageEligibilityRequestById(msg.getReferenceId());
@@ -123,7 +128,6 @@ public class ListenerServiceImpl implements ListenerService {
                 log.error("error in fetching claim request", e);
             }
             operation = Operations.CLAIM_SUBMIT;
-            payload = buildClaimFhirProfile(preAuthRequest);
         } else if (reqType.equalsIgnoreCase(Constants.PRE_AUTH)) {
 
             try {
@@ -133,14 +137,18 @@ public class ListenerServiceImpl implements ListenerService {
             catch(Exception e){
                 log.error("error in fetching preAuth request", e);
             }
-                    operation = Operations.PRE_AUTH_SUBMIT;
-                    payload = buildClaimFhirProfile(preAuthRequest);
+            operation = Operations.PRE_AUTH_SUBMIT;
+            payload = buildClaimFhirProfile(preAuthRequest);
+            response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
+            responseObject = (Map<String, Object>) output.get("responseObj");
+            String crid = (String) responseObject.get("correlation_id");
+            preAuthRequest.setCorrelationId(crid);
+            preAuthRequest.setStatus(String.valueOf(Status.PROCESSED));
+            preAuthRequestRepo.save(preAuthRequest);
+            log.info("responseObj {} ",responseObject);
+            log.info("correlation id"+crid);
+            log.info("response {} output {} ",response, output);
         }
-        HCXIntegrator.init(setConfig());
-        Map<String, Object> output = new HashMap<>();
-        HCXOutgoingRequest hcxOutgoingRequest = new HCXOutgoingRequest();
-        Boolean response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
-        log.info("response {} output {} ",response, output);
         return response;
     }
 
