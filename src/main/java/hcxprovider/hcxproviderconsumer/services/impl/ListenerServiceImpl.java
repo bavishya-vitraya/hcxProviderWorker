@@ -21,12 +21,11 @@ import io.hcxprotocol.init.HCXIntegrator;
 import io.hcxprotocol.utils.Operations;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.Claim;
+import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.ContactPoint.ContactPointSystem;
-import org.hl7.fhir.r4.model.Enumerations.AdministrativeGender;
 import org.hl7.fhir.r4.model.Procedure;
-import org.hl7.fhir.r4.model.codesystems.Adjudication;
+import org.hl7.fhir.r4.model.Enumerations.AdministrativeGender;
 import org.hl7.fhir.r4.model.codesystems.ClaimType;
 import org.hl7.fhir.r4.model.codesystems.ProcessPriority;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,9 +36,6 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
@@ -143,7 +139,7 @@ public class ListenerServiceImpl implements ListenerService {
             responseObject = (Map<String, Object>) output.get("responseObj");
             String crid = (String) responseObject.get("correlation_id");
             preAuthRequest.setCorrelationId(crid);
-            preAuthRequest.setStatus(String.valueOf(Status.PROCESSED));
+            preAuthRequest.setStatus(Status.PROCESSED);
             preAuthRequestRepo.save(preAuthRequest);
             log.info("responseObj {} ",responseObject);
             log.info("correlation id"+crid);
@@ -390,72 +386,4 @@ public class ListenerServiceImpl implements ListenerService {
         return messageString;
     }
 
-   /* @Override
-    public String buildClaimResponseFhirProfile(PreAuthResponse preAuthResponse) {
-        PreAuthVhiResponse preAuthVhiResponse = preAuthResponse.getPreAuthResponse();
-
-        Patient patient = new Patient();// should fetch from claim request
-        patient.setId("Patient/1");
-
-        Organization organization = new Organization(); // should fetch from claim request
-        organization.setId("organization/1");
-        organization.setName("Test-HOS01");
-
-        Claim claimRequest = new Claim(); // should fetch from claim request
-        claimRequest.setId("Claim/1");
-        claimRequest.setUse(Claim.Use.PREAUTHORIZATION);
-        claimRequest.setId("Claim/1");
-        claimRequest.setCreated(new Date());
-        claimRequest.setStatus(Claim.ClaimStatus.ACTIVE);
-        claimRequest.setType(new CodeableConcept(new Coding().setCode(ClaimType.INSTITUTIONAL.toCode()).setSystem("http://terminology.hl7.org/CodeSystem/claim-type")));
-        claimRequest.setPriority(new CodeableConcept(new Coding().setSystem("http://terminology.hl7.org/CodeSystem/processpriority").setCode(ProcessPriority.NORMAL.toCode())));
-        claimRequest.setPatient(new Reference(patient.getId()));
-        claimRequest.setProvider(new Reference(organization.getId()));
-        claimRequest.addInsurance().setSequence(1).setFocal(true).setCoverage(new Reference("Coverage/1"));
-
-
-        ClaimResponse claimResponse = new ClaimResponse();
-        claimResponse.setId("ClaimResponse/1");
-        claimResponse.addIdentifier().setValue(preAuthVhiResponse.getClaimNumber());
-        claimResponse.setPreAuthRef(preAuthVhiResponse.getClaimNumber());
-        claimResponse.setOutcome(ClaimResponse.RemittanceOutcome.COMPLETE); // no approved enum provided
-        claimResponse.setDisposition(preAuthVhiResponse.getClaimStatusInString());
-        claimResponse.addProcessNote().setText(preAuthVhiResponse.getQuery());
-        claimResponse.addTotal().setAmount(new Money().setCurrency("INR").setValue(preAuthVhiResponse.getApprovedAmount())).setCategory(new CodeableConcept(new Coding().setCode(Adjudication.ELIGIBLE.toCode()).setSystem("http://terminology.hl7.org/CodeSystem/adjudication")));
-        claimResponse.setStatus(ClaimResponse.ClaimResponseStatus.ACTIVE);
-        claimResponse.setType(new CodeableConcept(new Coding().setCode(ClaimType.INSTITUTIONAL.toCode()).setSystem("http://terminology.hl7.org/CodeSystem/claim-type")));
-        claimResponse.setUse(ClaimResponse.Use.PREAUTHORIZATION);
-        claimResponse.setCreated(new Date());
-        claimResponse.setPatient(new Reference(patient.getId()));
-        claimResponse.setRequestor(new Reference(organization.getId()));
-        claimResponse.setInsurer(new Reference(organization.getId()));
-        claimResponse.setRequest(new Reference(claimRequest.getId()));
-
-
-        Composition composition= new Composition();
-        composition.setId("composition/" + UUID.randomUUID().toString());
-        composition.setStatus(Composition.CompositionStatus.FINAL);
-        composition.getType().addCoding().setCode("HCXClaimResponse").setSystem("https://hcx.org/document-types").setDisplay("Claim Response");
-        composition.setDate(new Date());
-        composition.addAuthor().setReference("Organization/1");
-        composition.setTitle("Claim Response");
-        composition.addSection().addEntry().setReference("ClaimResponse/1");
-
-        FhirContext fhirctx = FhirContext.forR4();
-        Bundle bundle = new Bundle();
-        bundle.setId(UUID.randomUUID().toString());
-        bundle.setType(Bundle.BundleType.DOCUMENT);
-        bundle.getIdentifier().setSystem("https://www.tmh.in/bundle").setValue(bundle.getId());
-        bundle.setTimestamp(new Date());
-        bundle.addEntry().setFullUrl(composition.getId()).setResource(composition);
-        bundle.addEntry().setFullUrl(claimRequest.getId()).setResource(claimRequest);
-        bundle.addEntry().setFullUrl(patient.getId()).setResource(patient);
-        bundle.addEntry().setFullUrl(organization.getId()).setResource(organization);
-        bundle.addEntry().setFullUrl(claimResponse.getId()).setResource(claimResponse);
-
-        IParser p = fhirctx.newJsonParser().setPrettyPrint(true);
-        String messageString = p.encodeResourceToString(bundle);
-        System.out.println("here is the json " + messageString);
-        return messageString;
-    }*/
 }

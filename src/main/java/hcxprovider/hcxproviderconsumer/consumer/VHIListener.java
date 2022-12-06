@@ -33,8 +33,7 @@ public class VHIListener {
     public void recievedRequest(Message msg) throws Exception {
         try {
             log.info("retrieved message :{}",msg);
-            boolean result = listenerService.hcxGenerateRequest(msg);
-            log.info(String.valueOf(result));
+             listenerService.hcxGenerateRequest(msg);
         }
         catch(Exception e){
             log.error("Exception {}",e);
