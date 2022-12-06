@@ -382,7 +382,7 @@ public class ListenerServiceImpl implements ListenerService {
         bundle.addEntry().setFullUrl(claim.getId()).setResource(claim);
 
         String messageString = parser.encodeResourceToString(bundle);
-        log.info("fhir json ", messageString);
+        log.info("fhir json "+messageString);
         return messageString;
     }
 
