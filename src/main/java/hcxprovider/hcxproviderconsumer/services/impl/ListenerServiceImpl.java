@@ -195,7 +195,10 @@ public class ListenerServiceImpl implements ListenerService {
                 }
 
             }
-
+            if(resourceType.equalsIgnoreCase(Constants.CLAIM_RESOURCE)) {
+                Claim claimRequest = (Claim) entryComponent.getResource();
+                result.setHospitalReferenceId(Long.valueOf(claimRequest.getIdentifier().get(0).getValue()));
+            }
         }
         log.info("vhi result{}", new Gson().toJson(result));
         log.info("Parsed Claim Response from Fhir {}", claimResponse.getDisposition());
