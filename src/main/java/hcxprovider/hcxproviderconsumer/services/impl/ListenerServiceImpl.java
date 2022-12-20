@@ -142,7 +142,7 @@ public class ListenerServiceImpl implements ListenerService {
             operation = Operations.PRE_AUTH_SUBMIT;
             payload = buildClaimFhirProfile(preAuthRequest);
             response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
-            log.info("response {} output {} ",response, output);
+            log.info("response {} ",response);
             responseObject = (Map<String, Object>) output.get("responseObj");
             String crid = (String) responseObject.get("correlation_id");
             preAuthRequest.setCorrelationId(crid);
