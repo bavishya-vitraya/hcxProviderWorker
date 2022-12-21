@@ -142,8 +142,8 @@ public class ListenerServiceImpl implements ListenerService {
             }
             operation = Operations.PRE_AUTH_SUBMIT;
             payload = buildClaimFhirProfile(preAuthRequest);
-            //response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
-            Map<String, Object> hcxerror = new HashMap<>();
+            response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
+            /*Map<String, Object> hcxerror = new HashMap<>();
             Map<String, Object> hcxheaders = new HashMap<>();
             Map<String, Object> hcxresponse = new HashMap<>();
             if(!hcxOutgoingRequest.createHeader(recipientCode,null,null,hcxheaders)){
@@ -153,7 +153,7 @@ public class ListenerServiceImpl implements ListenerService {
             }else {
                 response = hcxOutgoingRequest.initializeHCXCall(JSONUtils.serialize(output), operation, hcxresponse);
                 output.putAll(hcxresponse);
-            }
+            }*/
             log.info("response {} ",response);
             log.info("{}",output);
             responseObject = (Map<String, Object>) output.get("responseObj");
