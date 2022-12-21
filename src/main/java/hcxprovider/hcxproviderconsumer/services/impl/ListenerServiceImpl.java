@@ -18,6 +18,7 @@ import hcxprovider.hcxproviderconsumer.services.ListenerService;
 import hcxprovider.hcxproviderconsumer.utils.Constants;
 import io.hcxprotocol.impl.HCXOutgoingRequest;
 import io.hcxprotocol.init.HCXIntegrator;
+import io.hcxprotocol.utils.JSONUtils;
 import io.hcxprotocol.utils.Operations;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -141,8 +142,19 @@ public class ListenerServiceImpl implements ListenerService {
             }
             operation = Operations.PRE_AUTH_SUBMIT;
             payload = buildClaimFhirProfile(preAuthRequest);
-            response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
-            log.info("response {} ",response);
+            //response = hcxOutgoingRequest.generate(payload, operation, recipientCode, output);
+            Map<String, Object> hcxerror = new HashMap<>();
+            Map<String, Object> hcxheaders = new HashMap<>();
+            Map<String, Object> hcxresponse = new HashMap<>();
+            if(!hcxOutgoingRequest.createHeader(recipientCode,null,null,hcxheaders)){
+                output.putAll(hcxerror);
+            } else if (!hcxOutgoingRequest.encryptPayload(hcxheaders, payload, output)) {
+                output.putAll(hcxerror);
+            }else {
+                response = hcxOutgoingRequest.initializeHCXCall(JSONUtils.serialize(output), operation, hcxresponse);
+                output.putAll(hcxresponse);
+            }
+            log.info("response {} ",response,output);
             responseObject = (Map<String, Object>) output.get("responseObj");
             String crid = (String) responseObject.get("correlation_id");
             preAuthRequest.setCorrelationId(crid);
