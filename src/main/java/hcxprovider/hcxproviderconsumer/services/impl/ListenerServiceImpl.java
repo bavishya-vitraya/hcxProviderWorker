@@ -154,7 +154,8 @@ public class ListenerServiceImpl implements ListenerService {
                 response = hcxOutgoingRequest.initializeHCXCall(JSONUtils.serialize(output), operation, hcxresponse);
                 output.putAll(hcxresponse);
             }
-            log.info("response {} ",response,output);
+            log.info("response {} ",response);
+            log.info("{}",output);
             responseObject = (Map<String, Object>) output.get("responseObj");
             String crid = (String) responseObject.get("correlation_id");
             preAuthRequest.setCorrelationId(crid);
